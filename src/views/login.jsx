@@ -15,7 +15,7 @@ export default function Login() {
               type="text"
               id="username"
               name="username"
-              placeholder="Username" // This will show the label inside the input
+              placeholder="Username" 
             />
           </div>
 
@@ -26,7 +26,7 @@ export default function Login() {
               type="password"
               id="password"
               name="password"
-              placeholder="Password" // This will show the label inside the input
+              placeholder="Password" 
             />
           </div>
 
@@ -38,6 +38,17 @@ export default function Login() {
             <button className="w-full bg-teal-500 hover:bg-teal-600 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500">
               Sign in with Google
             </button>
+          </div>
+
+          {/* Text and Register Link */}
+          <div className="text-center mt-6">
+            <p className="text-white text-sm">Don't have an account?</p>
+            <a
+              href="/register"
+              className=" text-white text-sm hover:underline font-bold"
+            >
+              Register
+            </a>
           </div>
         </div>
       </div>
