@@ -2,110 +2,113 @@ import React from 'react';
 import DefaultLayout from '../components/base'; 
 import SearchBar from '../components/search';
 import myIcon from '../assets/mufasa-poster-1.webp'; 
-import FilterComponent from '../components/filter';
+
 
 const DetailPage = () => {
     return (
         <DefaultLayout>
-            <SearchBar />  <FilterComponent/>
-            <div className="main-content p-8 text-white">
-                {/* Title and Description */}
-                <div className="flex flex-col md:flex-row md:justify-between ">
-                    {/* Image Section (With margin for spacing) */}
-                    <div className="flex-1 flex justify-center md:justify-start mb-4 md:mb-0">
-                        <img src={myIcon} alt="Drama Icon" className="w-64 h-80 md:mr-16" /> {/* Added margin-right */}
+            {/* Search bar and filter */}
+            <SearchBar />  
+
+            {/* Main content */}
+            <main className="p-8 max-w-6xl mx-auto">
+                {/* Drama Info Section */}
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Image Section */}
+                    <div className="flex-none w-full md:w-1/5">
+                        <img src={myIcon} alt="Drama Poster" className="w-full h-auto rounded shadow-lg mb-4" />
                     </div>
 
                     {/* Title and Description */}
-                    <div className="flex-3">
-                        <h1 className="text-4xl font-bold">Title</h1>
-                        <p className="text-sm text-gray-400">
-                            Other titles: Title 2, Title 3, Title 4 <br />
-                            Year: Spring 2016
+                    <div className="flex-grow">
+                        <h1 className="text-3xl text-gray-200 font-bold mb-2">Judul</h1>
+                        <p className="text-sm text-gray-400 mb-2">Other titles: Title 2, Title 3, Title 4</p>
+                        <p className="text-sm text-gray-400 mb-4">Year: Spring 2016</p>
+                        <p className="text-sm text-gray-200 mb-4">
+                            When an unprecedented heinous criminal is released from prison, a public bounty with a payout of 20 billion won is offered for his murder...
                         </p>
-                        <p className="mt-4">
-                            When an unprecedented heinous criminal is released from prison, a public bounty with a payout of 20 billion won is offered for his murder.
-                        </p>
-                        <p>Action, Thriller, Horror</p>
-                        <p className="mt-2">Rating: 3.5/5</p>
-                        <p className="mt-1">Availability: Fansub @subsub on X</p>
+                        <p className="text-sm text-gray-200 mb-2">Genres: Action, Thriller, Horror</p>
+                        <p className="text-sm text-gray-200 mb-2">Rating: 3.5/5</p>
+                        <p className="text-sm text-gray-400">Availability: Fansub: @solsub on X</p>
                     </div>
                 </div>
 
                 {/* Stars Section */}
-                <div className="mt-8">
-                    <h2 className="text-2xl font-bold">Stars</h2>
-                    <div className="grid grid-cols-3 gap-4 mt-4">
+                <div className="my-8 text-center">
+                    <h2 className="text-2xl text-gray-200 font-bold mb-4">Stars</h2>
+                    <div className="flex justify-center space-x-4 overflow-x-auto">
                         {['Song Joong Ki', 'Kim Ji Won', 'Son Hye Kyo', 'Jin Goo', 'Actor 1', 'Actor 2'].map((actor, index) => (
-                            <div key={index} className="text-center">
-                                <div className="w-20 h-20 bg-gray-700"></div>
-                                <p className="mt-2">{actor}</p>
+                            <div key={index} className="flex flex-col items-center">
+                                <img src="https://via.placeholder.com/100" alt={actor} className="w-20 h-20 bg-gray-700 rounded-full mb-2" />
+                                <p>{actor}</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Video Placeholder */}
-                <div className="mt-8 flex justify-center ">
-                    <div className="w-full max-w-3xl h-64 bg-gray-700 flex items-center justify-center ronded">
-                        <div className="text-2xl">Video Player Placeholder</div>
+                {/* Video Section */}
+                <div className="bg-gray-800 rounded mb-8 p-10">
+                    <div className="flex items-center justify-center">
+                        <img src="https://via.placeholder.com/600x300" alt="Drama Video" className="rounded shadow-lg" />
                     </div>
                 </div>
 
-                {/* User Reviews */}
-                <div className="mt-8 " >
-                    <h2 className="text-2xl font-bold">People think about this drama</h2>
-                    <div className="flex justify-between items-center mt-2">
-                        <span>Filtered by:</span>
-                        <select className="bg-gray-800 p-2 rounded text-white">
-                            <option value="5">★★★★★</option>
-                            <option value="4">★★★★☆</option>
-                            <option value="3">★★★☆☆</option>
-                            <option value="2">★★☆☆☆</option>
-                            <option value="1">★☆☆☆☆</option>
-                        </select>
-                    </div>
+                {/* Comments Section */}
+                <div className="bg-gray-800 p-4 rounded mb-8">
+                    <h2 className="text-2xl text-white font-bold mb-4">People think about this drama</h2>
+                    <div className="flex justify-between items-center mb-4">
+                    <p className="text-white">(4) Comments</p>
+
+    
+    <div className="flex items-center">
+        {/* Label for Filter By */}
+        <label className="text-white mr-2">Filter by:</label>
+        
+        {/* Select Dropdown */}
+        <select className="bg-gray-700 text-white p-2 rounded">
+            <option value="5" className="text-yellow-500">★★★★★</option>
+            <option value="4" className="text-yellow-500">★★★★</option>
+            <option value="3" className="text-yellow-500">★★★</option>
+            <option value="2" className="text-yellow-500">★★</option>
+            <option value="1" className="text-yellow-500">★</option>
+        </select>
+    </div>
+</div>
+
 
                     {/* Scrollable Comments Section */}
-                    <div className="mt-4 h-48 overflow-y-auto bg-gray-800 p-4 rounded">
-                        {[...Array(5)].map((_, index) => (
-                            <div key={index} className="flex items-start mb-4">
-                                <div className="w-12 h-12 bg-gray-700 rounded-full mr-4"></div>
-                                <div>
-                                    <p><strong>Nara</strong> (04/04/2016) said: "It is a wonderful drama! Love it so much! I need long comments to see how it is being seen in the display."</p>
-                                    <p className="mt-2">★★★★★</p>
-                                </div>
+                    <div className="space-y-4 max-h-60 overflow-y-auto">
+                        {[...Array(4)].map((_, index) => (
+                            <div key={index} className="border-b border-gray-700 pb-4">
+                                <p className="text-sm text-white">Nara (4/24/2016) said:</p>
+                                <p className="mb-2 text-white">It is a wonderful drama! I Love it so much!!!</p>
+                                <div className="text-yellow-500">★★★★★</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Review Submission Form */}
-                <div className="mt-8 flex">
-                    <h2 className="text-2xl font-bold">Add yours!</h2>
-                    <form className="mt-4">
-                        <div className="flex flex-col mb-4">
-                            <label className="mb-2" htmlFor="name">Name</label>
-                            <input className="p-2 bg-gray-800 rounded" type="text" id="name" name="name" required />
+                {/* Add Your Comment Section */}
+                <div className="bg-gray-800 p-4 rounded max-w-md">
+                    <h3 className="text-lg text-white font-bold mb-2">Add yours!</h3>
+                    <form className="space-y-4">
+                        <input type="text" placeholder="Name" className="w-full p-2 bg-gray-700 rounded text-white" />
+                        <div className="flex items-center">
+                            <span className="mr-2 text-white">Rate:</span>
+                            {/* Select Dropdown */}
+                                <select className="bg-gray-700 text-white p-2 rounded">
+                                    <option value="5" className="text-yellow-500">★★★★★</option>
+                                    <option value="4" className="text-yellow-500">★★★★</option>
+                                    <option value="3" className="text-yellow-500">★★★</option>
+                                    <option value="2" className="text-yellow-500">★★</option>
+                                    <option value="1" className="text-yellow-500">★</option>
+                                </select>
                         </div>
-                        <div className="flex flex-col mb-4">
-                            <label className="mb-2" htmlFor="rating">Rating</label>
-                            <select className="p-2 bg-gray-800 rounded" id="rating" name="rating">
-                                <option value="5">★★★★★</option>
-                                <option value="4">★★★★☆</option>
-                                <option value="3">★★★☆☆</option>
-                                <option value="2">★★☆☆☆</option>
-                                <option value="1">★☆☆☆☆</option>
-                            </select>
-                        </div>
-                        <div className="flex flex-col mb-4">
-                            <label className="mb-2" htmlFor="thoughts">Your thoughts</label>
-                            <textarea className="p-2 bg-gray-800 rounded" id="thoughts" name="thoughts" rows="4" required></textarea>
-                        </div>
-                        <button className="bg-blue-600 p-2 rounded">Submit</button>
+                        <textarea placeholder="Your thoughts" className="w-full p-2 bg-gray-700 rounded text-white"></textarea>
+                        <button type="submit" className="w-full  bg-teal-500 hover:bg-teal-600 p-2 rounded text-white">Submit</button>
                     </form>
                 </div>
-            </div>
+            </main>
         </DefaultLayout>
     );
 };
