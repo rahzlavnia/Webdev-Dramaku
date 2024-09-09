@@ -1,36 +1,20 @@
-import { createBrowserRouter } from 'react-router-dom';
-import Login from './views/login';
-import Register from './views/register';
-import DetailPage from './views/detail';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Base from './components/base'; // Pastikan casing konsisten
 import Home from './views/home';
-import SearchResult from './views/searchResult';  
-import DefaultLayout from './components/base';  
+import SearchResult from './views/searchResult';
+import Detail from './views/detail';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <SearchResult />,
-  },
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/register',
-    element: <Register />,
-  },
-  {
-    path: '/home',
-    element: <DefaultLayout><Home /></DefaultLayout>,  
-  },
-  {
-    path: '/detail',
-    element: <DetailPage />
-  },
-  {
-    path: '/search',
-    element: <DefaultLayout><SearchResult /></DefaultLayout>
-  },
-]);
+const AppRoutes = () => {
+    return (
+        <Routes>
+            <Route path="/" element={<Base />}>
+                <Route index element={<Home />} />
+                <Route path="search" element={<SearchResult />} />
+                <Route path="detail" element={<Detail />} />
+            </Route>
+        </Routes>
+    );
+};
 
-export default router;
+export default AppRoutes;

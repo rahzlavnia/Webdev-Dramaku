@@ -1,9 +1,8 @@
 import React from "react";
-import DefaultLayout from "../components/base";
 
 export default function Login() {
   return (
-    <DefaultLayout>
+    <div className="bg-gray-900 text-white min-h-screen">
       <div className="flex justify-center items-center h-screen">
         <div className="bg-gray-800 p-8 rounded-lg shadow-md w-96">
           <h2 className="text-white text-3xl text-center font-bold mb-6">Login</h2>
@@ -52,6 +51,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </DefaultLayout>
+    </div>
   );
 }

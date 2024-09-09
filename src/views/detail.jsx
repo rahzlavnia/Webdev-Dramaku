@@ -1,17 +1,12 @@
-import React from 'react';
-import DefaultLayout from '../components/base'; 
-import SearchBar from '../components/search';
 import myIcon from '../assets/mufasa-poster-1.webp'; 
+import React from 'react';
+import Base from '../components/base';
 
-
-const DetailPage = () => {
-    return (
-        <DefaultLayout>
-            {/* Search bar and filter */}
-            <SearchBar />  
-
-            {/* Main content */}
-            <main className="p-8 max-w-6xl mx-auto">
+const SearchResult = () => {
+  return (
+    <Base>
+    {/* Main content */}
+    <main className="p-8 max-w-6xl mx-auto">
                 {/* Drama Info Section */}
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Image Section */}
@@ -109,8 +104,8 @@ const DetailPage = () => {
                     </form>
                 </div>
             </main>
-        </DefaultLayout>
+    </Base>
     );
-};
+}
 
-export default DetailPage;
+export default SearchResult;
