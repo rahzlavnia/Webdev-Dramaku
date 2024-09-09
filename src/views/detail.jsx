@@ -4,7 +4,7 @@ import Base from '../components/base';
 
 const SearchResult = () => {
   return (
-    <Base>
+    <div>
     {/* Main content */}
     <main className="p-8 max-w-6xl mx-auto">
                 {/* Drama Info Section */}
@@ -104,7 +104,7 @@ const SearchResult = () => {
                     </form>
                 </div>
             </main>
-    </Base>
+    </div>
     );
 }
 
