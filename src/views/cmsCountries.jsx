@@ -1,9 +1,9 @@
 import React from 'react';
 import Cms from '../components/cms';
 
-const cmsCountries = () => {
+const Countries = () => {
     return (
-        <Cms>
+        <Cms activePage="countries">
                 {/* <!-- Country Form --> */}
                 <div class="w-3/4 text-left border-white p-4 mb-6 max-w-full mx-auto">
                     <form class="flex items-center space-x-4">
@@ -60,4 +60,4 @@ const cmsCountries = () => {
     );
 }
 
-export default cmsCountries;
+export default Countries;

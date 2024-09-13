@@ -1,6 +1,6 @@
 import myIcon from '../assets/mufasa-poster-1.webp'; 
 import React from 'react';
-import Base from '../components/base';
+
 
 const SearchResult = () => {
   return (
