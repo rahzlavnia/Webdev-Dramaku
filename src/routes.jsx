@@ -9,6 +9,7 @@ import Register from './views/register';
 import Actors from './views/cmsActors';
 import Countries from './views/cmsCountries';
 import CmsAwards from './views/cmsAwards';
+import Users from './views/cmsUsers';
 
 
 const AppRoutes = () => {
@@ -24,6 +25,7 @@ const AppRoutes = () => {
             <Route path="/actors" element={<Actors />} />
             <Route path="/countries" element={<Countries/>} />
             <Route path="/awards" element={<CmsAwards/>} />
+            <Route path="/users" element={<Users/>} />
         </Routes>
     );
 };

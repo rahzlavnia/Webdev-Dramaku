@@ -47,7 +47,7 @@ const CmsAwards = () => {
       <div className="w-full p-0"> {/* Full-width container */}
 
         {/* Search Form */}
-        <div className="w-4/5 text-left border-white p-0 mb-4 mx-auto">
+<div className="w-4/5 text-left border-white p-0 mb-4 mx-auto">
   <form className="flex flex-wrap space-x-4">
     <div className="flex flex-col space-y-4">
       {/* Country Input and Year Input side by side */}
