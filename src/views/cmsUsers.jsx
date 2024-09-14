@@ -119,7 +119,7 @@ const Users = () => {
   <div>
     <button
       type="submit"
-      className="bg-teal-600 w-20 rounded-xl text-white hover:bg-teal-700 h-10"
+      className="bg-teal-600 w-20 rounded-xl text-white hover:bg-teal-700 h-8"
     >
       {editingId ? 'Update' : 'Submit'}
     </button>
