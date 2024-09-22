@@ -11,6 +11,9 @@ import Countries from './views/cmsCountries';
 import CmsAwards from './views/cmsAwards';
 import Users from './views/cmsUsers';
 import Comments from './views/cmsComments';
+import DramaList from './views/cmsDrama';
+import DramaInput from './views/cmsDramaInput';
+import Genres from './views/cmsGenres';
 
 
 const AppRoutes = () => {
@@ -28,6 +31,9 @@ const AppRoutes = () => {
             <Route path="/awards" element={<CmsAwards/>} />
             <Route path="/users" element={<Users/>} />
             <Route path="/comments" element={<Comments/>} />
+            <Route path="/genres" element={<Genres/>} />
+            <Route path="/drama" element={<DramaList/>} />
+            <Route path="/dramaInput" element={<DramaInput/>} />
         </Routes>
     );
 };

@@ -1,7 +1,23 @@
 import React from 'react';
 import Divergent from "../assets/divergent.png";
+import CardMovie from '../components/cardMovie'; 
 
 const Home = () => {
+  const movies = [
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+1', title: 'Movie 1', year: 2022, genre: 'Action, Comedy', rating: 7.9, views: 1.5 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+2', title: 'Movie 2', year: 2022, genre: 'Romance, Comedy', rating: 6.9, views: 1.5 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+3', title: 'Movie 3', year: 2021, genre: 'Action, Drama', rating: 8.1, views: 2.1 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+4', title: 'Movie 4', year: 2021, genre: 'Horror, Thriller', rating: 7.5, views: 1.8 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+5', title: 'Movie 5', year: 2020, genre: 'Action, Drama', rating: 8.0, views: 2.0 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+6', title: 'Movie 6', year: 2020, genre: 'Comedy, Drama', rating: 7.2, views: 1.6 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+7', title: 'Movie 7', year: 2019, genre: 'Action, Comedy', rating: 7.8, views: 1.9 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+8', title: 'Movie 8', year: 2019, genre: 'Romance, Drama', rating: 7.0, views: 1.7 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+9', title: 'Movie 9', year: 2018, genre: 'Action, Thriller', rating: 8.3, views: 2.3 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+10', title: 'Movie 10', year: 2018, genre: 'Horror, Thriller', rating: 7.6, views: 1.8 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+11', title: 'Movie 11', year: 2017, genre: 'Action, Comedy', rating: 7.7, views: 1.9 },
+    { poster: 'https://via.placeholder.com/200x250?text=Movie+12', title: 'Movie 12', year: 2017, genre: 'Romance, Drama', rating: 7.1, views: 1.7 },
+  ];
+
   return (
     <div>
       {/* Main content starts here */}
@@ -35,21 +51,18 @@ const Home = () => {
       </div>
 
       {/* Card Container */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Movie Card */}
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-2xl hover:bg-gray-700 cursor-pointer">
-            <img src={`https://via.placeholder.com/150?text=Movie+${index + 1}`} alt={`Movie Poster ${index + 1}`} className="w-full h-48 object-cover" />
-            <div className="p-4">
-              <h3 className="text-lg font-semibold">Movie Title {index + 1}</h3>
-              <p className="text-gray-400">Year: {2023 - index}</p>
-              <p className="text-gray-400">Genre: {index % 2 === 0 ? 'Action, Drama' : 'Romance, Comedy'}</p>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-yellow-400">⭐ {Math.random().toFixed(1) * 10}</p>
-                <p className="text-gray-400">Views: {Math.floor(Math.random() * 2) + 1}M</p>
-              </div>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
+        {/* Render MovieCard components */}
+        {movies.map((movie, index) => (
+          <CardMovie
+            key={index}
+            poster={movie.poster}
+            title={movie.title}
+            year={movie.year}
+            genre={movie.genre}
+            rating={movie.rating}
+            views={movie.views}
+          />
         ))}
       </div>
     </div>

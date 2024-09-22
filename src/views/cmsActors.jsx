@@ -198,7 +198,7 @@ const Actors = () => {
                       <td className="py-3 px-6">{actor.birthDate}</td>
                       <td className="py-3 px-6">
                         {actor.photo ? (
-                          <img src={URL.createObjectURL(actor.photo)} alt="Actor Photo" className="w-12 h-12 rounded" />
+                          <img src={URL.createObjectURL(actor.photo)} alt={actor.name} className="w-12 h-12 rounded" />
                         ) : 'No Photo'}
                       </td>
                       <td className="py-3 px-6">
