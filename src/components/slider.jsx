@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Divergent from '../assets/divergent.png';
+import Mazerunner from '../assets/mazerunner.png';
+import Harrypotter from '../assets/harrychamber.jpg';
 
 const Slider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const navigate = useNavigate();
+
   const slides = [
-    { src: Divergent, alt: 'Popular Movie 1' },
-    { src: 'https://via.placeholder.com/600x400', alt: 'Popular Movie 2' },
-    { src: 'https://via.placeholder.com/600x400', alt: 'Popular Movie 3' },
+    { src: Divergent, alt: 'Popular Movie 1', id: 233 },
+    { src: Mazerunner, alt: 'Popular Movie 2', id: 230 },
+    { src: Harrypotter, alt: 'Popular Movie 3', id: 270 },
   ];
 
   const totalSlides = slides.length;
@@ -16,14 +21,14 @@ const Slider = () => {
     if (slider) {
       slider.style.transform = `translateX(-${currentSlide * 100}%)`;
     }
-  }, [currentSlide]); // Only depend on currentSlide
+  }, [currentSlide]);
 
   // Auto-slide effect every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prevSlide) => (prevSlide + 1) % totalSlides);
     }, 5000);
-    return () => clearInterval(interval); // Clean up the interval on unmount
+    return () => clearInterval(interval);
   }, [totalSlides]);
 
   const handleNext = () => {
@@ -34,17 +39,25 @@ const Slider = () => {
     setCurrentSlide((prevSlide) => (prevSlide - 1 + totalSlides) % totalSlides);
   };
 
+  const handleSlideClick = (movieId) => {
+    navigate(`/movies/${movieId}`);
+  };
+
   return (
     <div className="relative flex justify-center items-center mb-6">
       {/* Slider Container */}
       <div className="overflow-hidden w-full h-96 flex justify-center">
         <div id="slider" className="flex transition-transform ease-out duration-500">
           {slides.map((slide, index) => (
-            <div key={index} className="w-full flex-shrink-0 flex justify-center">
+            <div
+              key={index}
+              className="w-full flex-shrink-0 flex justify-center cursor-pointer"
+              onClick={() => handleSlideClick(slide.id)}
+            >
               <img
                 src={slide.src}
                 alt={slide.alt}
-                className="w-1/2 h-96 object-cover rounded-lg shadow-lg"
+                className="w-1/2 h-96 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300"
               />
             </div>
           ))}
