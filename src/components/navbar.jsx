@@ -1,9 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { useNavigate, useLocation } from 'react-router-dom'; // Import useLocation
 
 const Navbar = () => {
-  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false); // State for dropdown visibility
+  const navigate = useNavigate();
+  const location = useLocation(); // Get location object
+
+  const handleSearch = () => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('term', searchTerm);
+  
+    navigate(`/search?${queryParams.toString()}`);
+  };
+  
+
+ 
+  const handleLogoClick = () => {
+    navigate('/'); // Navigate to home page
+  };
+
+  // Reset searchTerm when user navigates to home or other non-search pages
+  useEffect(() => {
+    if (location.pathname === '/') {
+      setSearchTerm(''); // Reset search term to empty on home page
+    }
+  }, [location.pathname]); // Effect will run every time the route changes
 
   // Toggle the dropdown visibility
   const toggleDropdown = () => {
@@ -36,7 +60,12 @@ const Navbar = () => {
     <nav className="flex justify-between items-center bg-gray-900 p-4">
       {/* Logo */}
       <div className="flex items-center">
-        <img src={logo} className="w-40 h-10 mr-2" alt="Logo" />
+        <img
+          src={logo}
+          className="w-40 h-10 mr-2 cursor-pointer"
+          alt="Logo"
+          onClick={handleLogoClick} // Add onClick event to navigate to home
+        />
       </div>
 
       {/* Search and Filter */}
@@ -44,12 +73,15 @@ const Navbar = () => {
         <input
           type="text"
           placeholder="Search..."
+          value={searchTerm} // Controlled input based on searchTerm state
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()} // Handle search on Enter key
           className="w-96 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 text-black"
         />
         <button
           id="filterButton"
           onClick={toggleDropdown}
-          className="ml-2 bg-gray-700 text-white px-4 py-2 rounded-full relative"
+          className="ml-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-full relative"
         >
           Filter
         </button>
@@ -57,9 +89,7 @@ const Navbar = () => {
         {/* Dropdown Menu for Filters */}
         <div
           id="filterDropdown"
-          className={`absolute right-0 mt-2 w-full bg-gray-700 rounded-lg shadow-lg z-10 ${
-            isDropdownVisible ? '' : 'hidden'
-          }`}
+          className={`absolute right-0 mt-2 w-full bg-gray-700 rounded-lg shadow-lg z-10 ${isDropdownVisible ? '' : 'hidden'}`}
           style={{ top: '100%', right: '0' }}
         >
           <div className="p-4">
@@ -140,10 +170,10 @@ const Navbar = () => {
 
       {/* Watchlist and Login Buttons */}
       <div className="flex items-center">
-        <button className="bg-teal-500 text-white px-3 py-2 rounded-full flex items-center mr-2">
+        <a href="/login" className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2">
           <i className="fas fa-bookmark mr-2"></i> Watchlist
-        </button>
-        <a href="/login" className="bg-blue-500 text-white px-3 py-2 rounded-full">
+        </a>
+        <a href="/login" className="bg-blue-500 hover:bg-blue-600  text-white px-3 py-2 rounded-full">
           Login
         </a>
       </div>

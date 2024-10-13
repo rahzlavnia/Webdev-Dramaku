@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Base from './components/base'; // Adjust the casing if needed
+import Base from './components/base'; 
 import Home from './views/home';
 import SearchResult from './views/searchResult';
 import Detail from './views/detail';
@@ -21,8 +21,8 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/" element={<Base />}>
                 <Route index element={<Home />} />
-                <Route path="search" element={<SearchResult />} />
-                <Route path="detail/:id" element={<Detail />} />
+                <Route path="search" element={<SearchResult />} /> 
+                <Route path="movies/:id" element={<Detail />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
