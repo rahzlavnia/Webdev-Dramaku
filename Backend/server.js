@@ -1,23 +1,155 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-
 const app = express();
 const port = 3005;
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
 
 // Setup CORS to allow frontend access
 app.use(cors());
+app.use(express.json());
+
 
 // PostgreSQL connection details
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'Dramaku',
-    password: 'newpassword',
+    database: 'postgres',
+    password: 'Aziiz_4321',
     port: 5432,
 });
 
-app.get('/api/movies', async (req, res) => {
+const client = new OAuth2Client("193966095713-ooq3r03aaanmf67tudroa67ccctfqvk6.apps.googleusercontent.com");
+
+// Middleware untuk autentikasi token
+function authenticateToken(req, res, next) {
+  const token = req.headers["authorization"]?.split(" ")[1];
+  if (!token) return res.sendStatus(401); // Unauthorized
+
+  jwt.verify(token, "your_jwt_secret", (err, user) => {
+    if (err) return res.sendStatus(403); // Forbidden
+    req.user = user;
+    next();
+  });
+}
+
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const result = await pool.query(
+      "SELECT username, password, role_id FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = result.rows[0];
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { username: user.username, role: user.role_id },
+      "your_jwt_secret",
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token, role: user.role_id });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+// Fungsi untuk verifikasi token Google
+async function verifyGoogleToken(token) {
+  const ticket = await client.verifyIdToken({
+    idToken: token,
+    audience: "193966095713-ooq3r03aaanmf67tudroa67ccctfqvk6.apps.googleusercontent.com", // Ganti dengan client ID milikmu
+  });
+  return ticket.getPayload(); // Payload akan berisi informasi pengguna
+}
+
+// Endpoint untuk Google Login
+app.post("/google-login", async (req, res) => {
+  try {
+    const googleToken = req.body.token; // Ubah nama variabel agar tidak ada konflik
+
+    const googleUser = await verifyGoogleToken(googleToken);
+
+    let user = await pool.query("SELECT * FROM users WHERE google_id = $1", [googleUser.sub]);
+
+    if (user.rows.length === 0) {
+      await pool.query(
+        "INSERT INTO users (username, email, google_id, role_id) VALUES ($1, $2, $3, 'Writer')",
+        [googleUser.name, googleUser.email, googleUser.sub]
+      );
+
+      user = await pool.query("SELECT * FROM users WHERE google_id = $1", [googleUser.sub]);
+    }
+
+    const jwtToken = jwt.sign(
+      { username: user.rows[0].username, role: user.rows[0].role_id },
+      "your_jwt_secret",
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token: jwtToken, role: user.rows[0].role_id });
+  } catch (error) {
+    console.error("Error during Google login:", error);
+    res.status(500).send("Server error during Google login");
+  }
+});
+
+// Endpoint untuk registrasi
+app.post("/register", async (req, res) => {
+  const { username, email, password } = req.body; // Ambil username, email, dan password dari request body
+  let role;
+
+  // Tentukan role berdasarkan domain email
+  if (email.endsWith("@admindramaku.com")) {
+    role = "Admin";
+  } else if (email.endsWith("@gmail.com")) {
+    role = "Writer"; // Atau "Reader" 
+  } else {
+    return res.status(400).json({ message: "Invalid email domain" }); // Email tidak valid
+  }
+
+  try {
+    // Cek apakah username sudah ada
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Simpan pengguna baru ke database
+    await pool.query(
+      "INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4)",
+      [username, email, hashedPassword, role] // Gunakan role yang ditentukan
+    );
+    
+    res.status(201).json({ message: "User registered successfully", role });
+  } catch (error) {
+    console.error("Error during registration:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+app.get("/movies", async (req, res) => {
   try {
     const query = `
       SELECT m.id, m.title, m.year, m.images, m.synopsis,
