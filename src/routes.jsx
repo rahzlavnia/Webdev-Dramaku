@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Base from './components/base'; 
+import Base from './components/base';
 import Home from './views/home';
 import SearchResult from './views/searchResult';
 import Detail from './views/detail';
@@ -14,26 +14,60 @@ import Comments from './views/cmsComments';
 import DramaList from './views/cmsDrama';
 import DramaInput from './views/cmsDramaInput';
 import Genres from './views/cmsGenres';
+import ProtectedRoute from './protectedRoutes/ProtectedRoute';
 
-
-const AppRoutes = () => {
+const AppRoutes = ({ isAuthenticated, handleLogout }) => {
     return (
         <Routes>
             <Route path="/" element={<Base />}>
                 <Route index element={<Home />} />
-                <Route path="search" element={<SearchResult />} /> 
+                <Route path="search" element={<SearchResult />} />
                 <Route path="movies/:id" element={<Detail />} />
             </Route>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/actors" element={<Actors />} />
-            <Route path="/countries" element={<Countries/>} />
-            <Route path="/awards" element={<CmsAwards/>} />
-            <Route path="/users" element={<Users/>} />
-            <Route path="/comments" element={<Comments/>} />
-            <Route path="/genres" element={<Genres/>} />
-            <Route path="/drama" element={<DramaList/>} />
-            <Route path="/dramaInput" element={<DramaInput/>} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+
+            {/* Protected routes group */}
+            <Route path="/actors" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Actors handleLogout={handleLogout} />
+                </ProtectedRoute>
+            } />
+            <Route path="/countries" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Countries />
+                </ProtectedRoute>
+            } />
+            <Route path="/awards" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <CmsAwards />
+                </ProtectedRoute>
+            } />
+            <Route path="/comments" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Comments />
+                </ProtectedRoute>
+            } />
+            <Route path="/genres" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Genres />
+                </ProtectedRoute>
+            } />
+            <Route path="/drama" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <DramaList />
+                </ProtectedRoute>
+            } />
+            <Route path="/dramaInput" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <DramaInput />
+                </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <Users />
+                </ProtectedRoute>
+            } />
         </Routes>
     );
 };
