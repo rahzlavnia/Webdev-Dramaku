@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const MovieDetail = () => {
   const { id } = useParams(); // Get the movie ID from URL
@@ -7,7 +8,13 @@ const MovieDetail = () => {
   const [isCommentFormVisible, setIsCommentFormVisible] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [rating, setRating] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // State untuk status login
 
+  // Simulasi pengecekan login
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token); // Jika ada token, berarti pengguna sudah login
+  }, []);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -28,23 +35,52 @@ const MovieDetail = () => {
 
   if (!movie) return <div>Loading...</div>;
 
-  // Function to extract YouTube video ID from a full YouTube URL
   const extractYouTubeId = (url) => {
     const regExp = /^.*(youtu.be\/|v\/|\/u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const videoId = extractYouTubeId(movie.trailer); // Extract video ID
+  const videoId = extractYouTubeId(movie.trailer);
+
+  const handleCommentSubmit = async () => {
+    if (!commentText.trim() || rating === 0) {
+      alert("Please provide a comment and a rating.");
+      return; // Tidak lanjutkan jika komentar atau rating tidak valid
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:3005/movies/${id}/comments`,
+        { commentText, rating },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // Ambil token dari localStorage
+          },
+        }
+      );
+      console.log(response.data); // Tampilkan pesan sukses
+      setCommentText(''); // Clear input after submit
+      setRating(0); // Reset rating
+      setIsCommentFormVisible(false); // Sembunyikan form setelah submit
+      setMovie(prevMovie => ({
+        ...prevMovie,
+        comments: [
+          ...(prevMovie.comments || []), // Pastikan comments ada dan merupakan array
+          { userName: "You", text: commentText, rating, createdAt: new Date().toISOString() } // Menambahkan createdAt
+        ]
+      }));
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("Failed to add comment."); // Tampilkan alert jika gagal
+    }
+  };
 
   return (
     <div>
-      {/* Main content */}
       <main className="p-8 max-w-5xl mx-auto">
-        {/* Pastikan movie ada */}
         {movie ? (
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Image Section */}
             <div className="flex-none w-full md:w-1/5">
               <img
                 src={movie.images || 'https://via.placeholder.com/200x300?text=No+Image+Available'}
@@ -53,7 +89,6 @@ const MovieDetail = () => {
               />
             </div>
             <div className="flex-grow">
-              {/* Title and Description */}
               <h1 className="text-3xl text-gray-200 font-bold mb-2">{movie.title || 'Title Not Available'}</h1>
               <p className="text-sm text-gray-400 mb-2">
                 Alternative titles: {movie.alt_title === "NaN" ? "-" : (movie.alt_title || 'N/A')}
@@ -131,15 +166,20 @@ const MovieDetail = () => {
           </div>
         </div>
 
-
         {/* Comments Section */}
         <div className="bg-gray-800 p-4 rounded mb-8">
-          <div className="flex justify-between items-center mb-4"> {/* Flex container for title and button */}
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-white">People think about this drama</h2>
-            <button
-              onClick={() => setIsCommentFormVisible(!isCommentFormVisible)} className="bg-teal-500 text-white px-4 py-2 rounded-full hover:bg-teal-600 transition duration-300">
-              Add Comment
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => setIsCommentFormVisible(!isCommentFormVisible)}
+                className="bg-teal-500 text-white px-4 py-2 rounded-full hover:bg-teal-600 transition duration-300"
+              >
+                Add Comment
+              </button>
+            ) : (
+              <p className="text-gray-400">Please log in to add a comment.</p>
+            )}
           </div>
 
           <div className="flex justify-between items-center mb-4">
@@ -154,8 +194,7 @@ const MovieDetail = () => {
             </select>
           </div>
 
-          {/* Form untuk menambahkan komentar, tampil jika isCommentFormVisible true */}
-          {isCommentFormVisible && (
+          {isCommentFormVisible && isLoggedIn && (
             <div className="mb-4 p-4 bg-gray-700 rounded-lg">
               <h3 className="text-lg font-semibold text-white mb-2">Add Your Comment</h3>
 
@@ -165,8 +204,7 @@ const MovieDetail = () => {
                   <span
                     key={star}
                     onClick={() => setRating(star)}
-                    className={`cursor-pointer text-3xl ${star <= rating ? 'text-yellow-500' : 'text-gray-400'
-                      }`}
+                    className={`cursor-pointer text-3xl ${star <= rating ? 'text-yellow-500' : 'text-gray-400'}`}
                   >
                     ★
                   </span>
@@ -177,44 +215,34 @@ const MovieDetail = () => {
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="w-full p-2 mb-2 rounded bg-gray-600 text-white"
-                rows="3"
+                className="w-full p-2 mb-2 rounded-lg bg-gray-800 text-white"
                 placeholder="Write your comment here..."
+                rows="3"
               ></textarea>
 
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full"
-                onClick={() => {
-                  // Lakukan aksi untuk menambahkan komentar (misalnya submit ke API)
-                  setIsCommentFormVisible(false); // Sembunyikan form setelah submit
-                  setCommentText(''); // Kosongkan teks komentar
-                  setRating(0); // Reset rating
-                }}
+                onClick={handleCommentSubmit}
+                className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 transition duration-300"
               >
-                Submit
+                Submit Comment
               </button>
             </div>
           )}
 
-          {/* Make this section scrollable */}
-          <div className="space-y-4 max-h-60 overflow-y-auto">
-            {/* Render Comments */}
-            {movie.comments && movie.comments.length > 0 ? (
-              movie.comments.map((comment, index) => (
-                <div key={index} className="border-b border-gray-700 pb-4">
-                  <div className="text-yellow-500">{'★'.repeat(comment.rating)}</div>
-                  <p className="text-sm text-gray-400">
-                    {comment.user} ({new Date(comment.date).toLocaleDateString()}) said:
-                  </p>
-                  <p className="mb-2">{comment.text}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-400">No comments available</p>
-            )}
-          </div>
+          {/* Daftar komentar */}
+          {movie.comments && movie.comments.length > 0 ? (
+            movie.comments.map((comment, index) => (
+              <div key={index} className="mb-2 p-2 bg-gray-600 rounded">
+                <p className="text-yellow-500">{comment.username || 'Anonymous'}</p> {/* Default jika userName tidak ada */}
+                <p className="text-gray-400">{comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Date not available'}</p> {/* Penanganan tanggal */}
+                <p className="text-white">{comment.text}</p>
+                <p className="text-gray-400">Rating: {comment.rating} ★</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400">No comments yet.</p>
+          )}
         </div>
-
       </main>
     </div>
   );

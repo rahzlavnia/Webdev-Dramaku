@@ -193,10 +193,10 @@ app.get('/api/movies/:id', async (req, res) => {
           (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
             FROM comments c 
             WHERE c.movie_id = m.id AND c.status = '1') as comments,
-          (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
-            FROM movie_actor ma
-            JOIN actors a ON a.id = ma.actor_id 
-            WHERE ma.movie_id = m.id) AS actors,
+            (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
+             FROM movie_actor ma
+             JOIN actors a ON a.id = ma.actor_id 
+             WHERE ma.movie_id = m.id) AS actors,
           (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
             FROM movie_award md 
             JOIN awards w ON w.id = md.award_id 
@@ -206,6 +206,8 @@ app.get('/api/movies/:id', async (req, res) => {
     `;
 
     const result = await pool.query(query, [movieId]);
+
+    console.log('Result:', result.rows); // Debugging output
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Movie not found' });
@@ -217,6 +219,7 @@ app.get('/api/movies/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 
 app.get('/api/search', async (req, res) => {
@@ -338,6 +341,30 @@ app.get('/api/awards', async (req, res) => {
   } catch (error) {
     console.error('Error fetching awards:', error);
     res.status(500).json({ message: 'Error fetching awards', error: error.message });
+  }
+});
+
+// Endpoint untuk menambahkan komentar
+app.post("/movies/:id/comments", authenticateToken, async (req, res) => {
+  const movieId = parseInt(req.params.id);
+  const { commentText, rating } = req.body;
+  const userName = req.user.username; // Ambil username dari token yang terautentikasi
+
+  if (!commentText || !rating) {
+    return res.status(400).json({ message: "Comment text and rating are required." });
+  }
+
+  try {
+    // Insert komentar ke database
+    await pool.query(
+      "INSERT INTO comments (movie_id, username, comment, rate, status) VALUES ($1, $2, $3, $4, '1')",
+      [movieId, userName, commentText, rating]
+    );
+
+    res.status(201).json({ message: "Comment added successfully." });
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    res.status(500).json({ message: "Server error while adding comment." });
   }
 });
 

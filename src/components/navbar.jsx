@@ -6,6 +6,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [isProfileDropdownVisible, setIsProfileDropdownVisible] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const [suggestions, setSuggestions] = useState([]);
@@ -183,6 +186,13 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const token = localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT to extract username
+      setUsername(payload.username);
+      setIsAuthenticated(true);
+    }
+
   const debounce = (func, delay) => {
     let debounceTimer;
     return function (...args) {
@@ -267,16 +277,21 @@ const Navbar = () => {
     debouncedFetchSuggestions(searchTerm);
   }, [searchTerm]);
 
-  // Toggle the dropdown visibility
   const toggleDropdown = () => {
     setIsDropdownVisible(!isDropdownVisible);
   };
 
-  // Close the dropdown when clicking outside
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownVisible(!isProfileDropdownVisible);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       const filterButton = document.getElementById('filterButton');
       const filterDropdown = document.getElementById('filterDropdown');
+      const profileDropdown = document.getElementById('profileDropdown');
+      const profileButton = document.getElementById('profileButton');
+
       if (
         filterDropdown &&
         !filterDropdown.contains(event.target) &&
@@ -285,14 +300,30 @@ const Navbar = () => {
       ) {
         setIsDropdownVisible(false);
       }
+
+      if (
+        profileDropdown &&
+        !profileDropdown.contains(event.target) &&
+        profileButton &&
+        !profileButton.contains(event.target)
+      ) {
+        setIsProfileDropdownVisible(false);
+      }
     };
 
     window.addEventListener('click', handleClickOutside);
-
     return () => {
       window.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    setIsAuthenticated(false);
+    setUsername(''); // Reset username
+    navigate('/');
+  };
 
   return (
     <nav className="flex justify-between items-center bg-gray-900 p-4">
@@ -478,14 +509,46 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Watchlist and Login Buttons */}
+      {/* Watchlist and Profile with Dropdown */}
       <div className="flex items-center">
-        <a href="/login" className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2">
+        <a
+          href="/watchlist"
+          className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2"
+        >
           <i className="fas fa-bookmark mr-2"></i> Watchlist
         </a>
-        <a href="/login" className="bg-blue-500 hover:bg-blue-600  text-white px-3 py-2 rounded-full">
-          Login
-        </a>
+
+        {!isAuthenticated ? (
+          <a
+            href="/login"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full"
+          >
+            Login
+          </a>
+        ) : (
+          <div className="relative">
+            <div
+              onClick={toggleProfileDropdown}
+              className="bg-blue-300 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer"
+            >
+              {username ? username.charAt(0).toUpperCase() : ''}
+            </div>
+            {isProfileDropdownVisible && (
+              <div
+                id="profileDropdown"
+                className="absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg z-10"
+                style={{ top: '100%', right: '0' }}
+              >
+                <button
+                  onClick={handleLogout}
+                  className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
