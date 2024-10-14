@@ -49,20 +49,18 @@ const Slider = () => {
       <div className="overflow-hidden w-full h-96 flex justify-center">
         <div id="slider" className="flex transition-transform ease-out duration-500">
           {slides.map((slide, index) => (
-            <div
-              key={index}
-              className="w-full flex-shrink-0 flex justify-center cursor-pointer"
-              onClick={() => handleSlideClick(slide.id)}
-            >
+            <div key={index} className="w-full flex-shrink-0 flex justify-center">
               <img
                 src={slide.src}
                 alt={slide.alt}
-                className="w-1/2 h-96 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300"
+                className="w-1/2 h-96 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 cursor-pointer"
+                onClick={() => handleSlideClick(slide.id)} // Redirect only when the image is clicked
               />
             </div>
           ))}
         </div>
       </div>
+
 
       {/* Left Arrow */}
       <button

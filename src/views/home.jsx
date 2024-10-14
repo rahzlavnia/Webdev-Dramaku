@@ -13,11 +13,10 @@ const Home = () => {
   const navigate = useNavigate();
 
 
-
   const fetchMovies = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3005/movies`);
+      const response = await fetch(`http://localhost:3005/api/movies`);
       const data = await response.json();
 
       if (data.length > 0) {
@@ -66,7 +65,7 @@ const Home = () => {
           year={movie.year}
           genre={movie.genre}
           rating={movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
-          views={movie.views || 0}
+          // views={movie.views || 0}
           onClick={() => navigate(`/movies/${movie.id}`)}
         />        
         ))}

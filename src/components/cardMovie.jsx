@@ -15,7 +15,7 @@ const CardMovie = ({ poster, title, year, genre, rating, views, onClick }) => {
         </div>
         <div className="flex items-center justify-between"> {/* Stays at the bottom */}
           <p className="text-yellow-400">⭐ {rating}</p>
-          <p className="text-gray-400">Views: {views}M</p>
+          {/* <p className="text-gray-400">Views: {views}M</p> */}
         </div>
       </div>
     </div>

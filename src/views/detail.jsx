@@ -12,7 +12,7 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/movies/${id}`);
+        const response = await fetch(`http://localhost:3005/api/movies/${id}`);
         if (!response.ok) {
           throw new Error(`Error fetching movie details: ${response.statusText}`);
         }
@@ -55,7 +55,9 @@ const MovieDetail = () => {
             <div className="flex-grow">
               {/* Title and Description */}
               <h1 className="text-3xl text-gray-200 font-bold mb-2">{movie.title || 'Title Not Available'}</h1>
-              <p className="text-sm text-gray-400 mb-2">Alternative titles: {movie.alt_title || 'N/A'}</p>
+              <p className="text-sm text-gray-400 mb-2">
+                Alternative titles: {movie.alt_title === "NaN" ? "-" : (movie.alt_title || 'N/A')}
+              </p>
               <p className="text-sm text-gray-400 mb-4">Year: {movie.year || 'Unknown'}</p>
               <p className="text-sm text-gray-200 mb-4">{movie.synopsis || 'No synopsis available'}</p>
               <p className="text-sm text-gray-200 mb-2">
@@ -64,7 +66,8 @@ const MovieDetail = () => {
               <p className="text-sm text-gray-200 mb-2">
                 Rating: {movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
               </p>
-              <p className="text-sm text-gray-400">Availability: {movie.availability || 'Unknown'}</p>
+              <p className="text-sm text-gray-400 mb-2">Availability: {movie.availability || 'Unknown'}</p>
+              <p className="text-sm text-gray-400 mb-4">Awards: {movie.awards || 'No Awards'}</p>
             </div>
           </div>
         ) : (
@@ -91,7 +94,7 @@ const MovieDetail = () => {
                     }}
                   />
                   <p className="text-gray-200 whitespace-normal break-words text-center max-w-[70px] text-xs">
-                    {actor.name.split(' ').length > 2
+                    {actor.name.split(' ').length > 3
                       ? actor.name.split(' ').map((word, i) => (
                         <span key={i}>
                           {word}

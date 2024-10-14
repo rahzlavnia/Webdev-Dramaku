@@ -14,11 +14,11 @@ app.use(express.json());
 
 // PostgreSQL connection details
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres',
-    password: 'Aziiz_4321',
-    port: 5432,
+  user: 'postgres',
+  host: 'localhost',
+  database: 'Dramaku',
+  password: 'newpassword',
+  port: 5432,
 });
 
 const client = new OAuth2Client("193966095713-ooq3r03aaanmf67tudroa67ccctfqvk6.apps.googleusercontent.com");
@@ -141,7 +141,7 @@ app.post("/register", async (req, res) => {
       "INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4)",
       [username, email, hashedPassword, role] // Gunakan role yang ditentukan
     );
-    
+
     res.status(201).json({ message: "User registered successfully", role });
   } catch (error) {
     console.error("Error during registration:", error);
@@ -149,14 +149,18 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.get("/movies", async (req, res) => {
+app.get("/api/movies", async (req, res) => {
   try {
     const query = `
-      SELECT m.id, m.title, m.year, m.images, m.synopsis,
+      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.availability, m.country_id,
             (SELECT string_agg(g.name, ', ') FROM movie_genre mg 
               JOIN genres g ON g.id = mg.genre_id WHERE mg.movie_id = m.id) as genre,
             (SELECT avg(c.rate) FROM comments c WHERE c.movie_id = m.id AND c.status = '1') as rating,
-            0 as views
+            0 as views,
+            (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
+            FROM movie_award md 
+            JOIN awards w ON w.id = md.award_id 
+            WHERE md.movie_id = m.id AND w.year IS NOT NULL) as award
       FROM movies m
       ORDER BY m.id ASC;
     `;
@@ -173,26 +177,30 @@ app.get("/movies", async (req, res) => {
 });
 
 
-app.get('/movies/:id', async (req, res) => {
+app.get('/api/movies/:id', async (req, res) => {
   const movieId = parseInt(req.params.id);
 
   try {
     const query = `
-      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability,
-            (SELECT string_agg(g.name, ', ') 
-             FROM movie_genre mg 
-             JOIN genres g ON g.id = mg.genre_id 
-             WHERE mg.movie_id = m.id) as genres,
-            (SELECT avg(c.rate) 
-             FROM comments c 
-             WHERE c.movie_id = m.id AND c.status = '1') as rating,
-            (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
-             FROM comments c 
-             WHERE c.movie_id = m.id AND c.status = '1') as comments,
+    SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability,
+          (SELECT string_agg(g.name, ', ') 
+            FROM movie_genre mg 
+            JOIN genres g ON g.id = mg.genre_id 
+            WHERE mg.movie_id = m.id) as genres,
+          (SELECT avg(c.rate) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = '1') as rating,
+          (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = '1') as comments,
           (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
             FROM movie_actor ma
             JOIN actors a ON a.id = ma.actor_id 
-            WHERE ma.movie_id = m.id) AS actors
+            WHERE ma.movie_id = m.id) AS actors,
+          (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
+            FROM movie_award md 
+            JOIN awards w ON w.id = md.award_id 
+            WHERE md.movie_id = m.id AND w.year IS NOT NULL) as awards
       FROM movies m
       WHERE m.id = $1;
     `;
@@ -212,44 +220,128 @@ app.get('/movies/:id', async (req, res) => {
 
 
 app.get('/api/search', async (req, res) => {
-  const searchTerm = req.query.term || ''; // Ambil parameter 'term' dari query
-  const formattedSearchTerm = `%${searchTerm.toLowerCase()}%`; // Format untuk SQL LIKE dengan wildcard
+  const searchTerm = req.query.term || ''; // Get the 'term' parameter from the query
+
+  // Define a list of stop words to ignore in the search
+  const stopWords = [
+    'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
+    'at', 'by', 'on', 'with', 'b', 'c', 'd', 'e', 'f', 'g',
+    'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+    's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'th', 'wi'
+  ];
+
+  // Filter out stop words from the search term
+  const filteredTerm = searchTerm
+    .toLowerCase()
+    .split(' ')
+    .filter(word => !stopWords.includes(word) && word.trim() !== '')
+    .join(' ');
+
+  // Check if the filtered term is empty
+  if (!filteredTerm) {
+    return res.json([]); // Return an empty array if no valid search term remains
+  }
+
+  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; // Match the beginning of a word
+  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; // Format for SQL LIKE with trailing wildcard only
 
   try {
-    // Query untuk mencari berdasarkan judul dan aktor
+    // SQL query to search based on title and actor's name using regex for precise title matching
     const query = `
-      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis,
-             (SELECT string_agg(g.name, ', ') 
-              FROM movie_genre mg
-              JOIN genres g ON g.id = mg.genre_id
-              WHERE mg.movie_id = m.id) AS genre,
-             (SELECT AVG(c.rate)
-              FROM comments c 
-              WHERE c.movie_id = m.id AND c.status = '1') AS rating,
-              (SELECT string_agg(a.name, ', ')
-              FROM movie_actor ma
-              JOIN actors a ON a.id = ma.actor_id 
-              WHERE ma.movie_id = m.id) AS actors,
-            0 AS views
+      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id
+        (SELECT string_agg(g.name, ', ') 
+         FROM movie_genre mg
+         JOIN genres g ON g.id = mg.genre_id
+         WHERE mg.movie_id = m.id) AS genre,
+        (SELECT AVG(c.rate)
+         FROM comments c 
+         WHERE c.movie_id = m.id AND c.status = '1') AS rating,
+        (SELECT string_agg(a.name, ', ')
+         FROM movie_actor ma
+         JOIN actors a ON a.id = ma.actor_id 
+         WHERE ma.movie_id = m.id) AS actors
       FROM movies m
       LEFT JOIN movie_actor ma ON ma.movie_id = m.id
       LEFT JOIN actors a ON a.id = ma.actor_id
-      WHERE LOWER(m.title) LIKE $1 OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE  $1
+      WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
+        OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE $2
       GROUP BY m.id
       ORDER BY m.id ASC;
     `;
 
-    const movies = await pool.query(query, [formattedSearchTerm]);
-   
-    res.json(movies.rows);
+    const movies = await pool.query(query, [formattedSearchTermWithWordBoundary, formattedSearchTermWithoutLeadingWildcard]);
 
+    res.json(movies.rows);
   } catch (error) {
     console.error('Error fetching search results:', error);
     res.status(500).json({ message: 'Error fetching search results' });
   }
 });
 
+app.get('/api/suggestions', async (req, res) => {
+  const searchTerm = req.query.term || '';
+  const formattedSearchTerm = `${searchTerm.toLowerCase()}%`; // For SQL LIKE
+
+  console.log('Formatted Search Term:', formattedSearchTerm); // Log the search term
+
+  try {
+    const query = `
+      SELECT title FROM movies
+      WHERE LOWER(title) LIKE $1
+      ORDER BY title ASC
+      LIMIT 10; 
+    `;
+
+    const result = await pool.query(query, [formattedSearchTerm]);
+    const titles = result.rows.map(row => row.title);
+    res.json(titles); // Return the array of titles
+  } catch (error) {
+    console.error('Error fetching suggestions:', error);
+    res.status(500).json({ message: 'Error fetching suggestions', error: error.message }); // Include error details
+  }
+});
+
+
+app.get('/api/genres', async (req, res) => {
+  try {
+    const query = 'SELECT id, name FROM genres ORDER BY name ASC;';
+    const result = await pool.query(query);
+    const genres = result.rows; // Ambil semua genre dari query
+
+    res.json(genres); // Mengembalikan array genre
+  } catch (error) {
+    console.error('Error fetching genres:', error);
+    res.status(500).json({ message: 'Error fetching genres', error: error.message }); // Detail error
+  }
+});
+
+app.get('/api/countries', async (req, res) => {
+  try {
+    const query = 'SELECT id, name FROM countries ORDER BY name ASC;';
+    const result = await pool.query(query);
+    const countries = result.rows;
+
+    res.json(countries); 
+  } catch (error) {
+    console.error('Error fetching countries:', error);
+    res.status(500).json({ message: 'Error fetching countries', error: error.message }); // Detail error
+  }
+});
+
+app.get('/api/awards', async (req, res) => {
+  try {
+    const query = 'SELECT id, name, year FROM awards WHERE year IS NOT NULL ORDER BY name ASC;';
+    const result = await pool.query(query);
+    const awards = result.rows;
+
+    res.json(awards);
+  } catch (error) {
+    console.error('Error fetching awards:', error);
+    res.status(500).json({ message: 'Error fetching awards', error: error.message });
+  }
+});
+
 
 app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on http://localhost:${port}`);
 });

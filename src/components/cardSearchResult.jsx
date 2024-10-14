@@ -27,7 +27,7 @@ const CardResult = ({ movie, onClick }) => {
         </div>
         <div className="absolute bottom-4 right-4 flex space-x-4">
           <p className="text-yellow-400">⭐ {movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}</p>
-          <p className="text-gray-400">Views: {movie.views || 'N/A'}</p>
+          {/* <p className="text-gray-400">Views: {movie.views || 'N/A'}</p> */}
         </div>
       </div>
     </div>

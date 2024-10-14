@@ -14,6 +14,8 @@ import Comments from './views/cmsComments';
 import DramaList from './views/cmsDrama';
 import DramaInput from './views/cmsDramaInput';
 import Genres from './views/cmsGenres';
+import FilteredMovies from './views/filteredMovies';
+
 
 
 const AppRoutes = () => {
@@ -23,6 +25,7 @@ const AppRoutes = () => {
                 <Route index element={<Home />} />
                 <Route path="search" element={<SearchResult />} /> 
                 <Route path="movies/:id" element={<Detail />} />
+                <Route path="filtered-movies" element={<FilteredMovies />} /> 
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
