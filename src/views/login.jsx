@@ -31,7 +31,7 @@ export default function Login() {
       setIsAuthenticated(true);
 
       if (response.data.role === "Admin" ) {
-        window.location.href = "/users";
+        window.location.href = "/";
       } else {
         window.location.href = "/";
       }
@@ -50,7 +50,7 @@ export default function Login() {
       setIsAuthenticated(true);
 
       if (response.data.role === "Admin" ) {
-        window.location.href = "/users";
+        window.location.href = "/";
       } else {
         window.location.href = "/";
       }
