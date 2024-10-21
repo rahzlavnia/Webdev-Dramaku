@@ -18,7 +18,15 @@ const Navbar = () => {
   const [awards, setAwards] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
   const years = Array.from({ length: 40 }, (_, index) => 1985 + index);
-  const [filter, setFilter] = useState({ genre: '', country: '', year: '', avail: '', sort: '', award: '' });
+  const [filter, setFilter] = useState({
+    genre: '',
+    country: '',
+    year: '',
+    avail: '',
+    award: '',
+    sort: '',
+  });
+
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -98,6 +106,15 @@ const Navbar = () => {
         return availability;
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT to extract username
+      setUsername(payload.username);
+      setIsAuthenticated(true);
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -185,13 +202,6 @@ const Navbar = () => {
   const handleLogoClick = () => {
     navigate('/');
   };
-
-  const token = localStorage.getItem("token");
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1])); // Decode JWT to extract username
-      setUsername(payload.username);
-      setIsAuthenticated(true);
-    }
 
   const debounce = (func, delay) => {
     let debounceTimer;

@@ -15,8 +15,8 @@ import DramaList from './views/cmsDrama';
 import DramaInput from './views/cmsDramaInput';
 import Genres from './views/cmsGenres';
 import FilteredMovies from './views/filteredMovies';
-
 import ProtectedRoute from './protectedRoutes/ProtectedRoute';
+
 
 const AppRoutes = ({ isAuthenticated, handleLogout }) => {
     return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import CardMovie from '../components/cardMovie'; 
+import CardMovie from '../components/cardMovie';
 import { useNavigate } from 'react-router-dom';
 import Slider from '../components/slider';
 
@@ -51,24 +51,25 @@ const Home = () => {
   return (
     <div>
       {/* Main content */}
-      <div className="relative flex justify-center items-center mb-6">
+      <div className="relative flex justify-center items-center">
         {/* Slider Section */}
-          <Slider />
+        <Slider />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
-        {/* Render MovieCard components */}
-        {visibleMovies.map((movie) => (
-          <CardMovie  
-          key={movie.id}
-          poster={movie.images || 'https://via.placeholder.com/200x250?text=No+Image'}
-          title={movie.title}
-          year={movie.year}
-          genre={movie.genre}
-          rating={movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
-          // views={movie.views || 0}
-          onClick={() => navigate(`/movies/${movie.id}`)}
-        />        
-        ))}
+      <div className="px-12"> {/* Menambahkan padding kiri dan kanan */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
+          {/* Render MovieCard components */}
+          {visibleMovies.map((movie) => (
+            <CardMovie
+              key={movie.id}
+              poster={movie.images || 'https://via.placeholder.com/200x250?text=No+Image'}
+              title={movie.title}
+              year={movie.year}
+              genre={movie.genre}
+              rating={movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
+              onClick={() => navigate(`/movies/${movie.id}`)}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Show More Button */}

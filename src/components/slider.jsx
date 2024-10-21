@@ -9,9 +9,9 @@ const Slider = () => {
   const navigate = useNavigate();
 
   const slides = [
-    { src: Divergent, alt: 'Popular Movie 1', id: 233 },
-    { src: Mazerunner, alt: 'Popular Movie 2', id: 230 },
-    { src: Harrypotter, alt: 'Popular Movie 3', id: 270 },
+    { src: Divergent, title: 'Divergent', id: 233 },
+    { src: Mazerunner, title: 'The Maze Runner', id: 230 },
+    { src: Harrypotter, title: 'Harry Potter and The Chamber of Secrets', id: 270 },
   ];
 
   const totalSlides = slides.length;
@@ -46,26 +46,30 @@ const Slider = () => {
   return (
     <div className="relative flex justify-center items-center mb-6">
       {/* Slider Container */}
-      <div className="overflow-hidden w-full h-96 flex justify-center">
+      <div className="overflow-hidden w-[560px] h-[315px] flex justify-center">
         <div id="slider" className="flex transition-transform ease-out duration-500">
           {slides.map((slide, index) => (
-            <div key={index} className="w-full flex-shrink-0 flex justify-center">
+            <div key={index} className="w-full flex-shrink-0 flex justify-center relative">
               <img
                 src={slide.src}
-                alt={slide.alt}
-                className="w-1/2 h-96 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 cursor-pointer"
-                onClick={() => handleSlideClick(slide.id)} // Redirect only when the image is clicked
+                alt={slide.title}
+                className="w-full h-full object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 cursor-pointer"
+                onClick={() => handleSlideClick(slide.id)}
               />
+              {/* Gradient Layer bawah */}
+              <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black to-transparent transition-opacity duration-300 " />
+              <div className="absolute bottom-0 left-0 p-4 text-gray-300  text-xl font-bold transition-opacity duration-300">
+                {slide.title}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-
       {/* Left Arrow */}
       <button
         onClick={handlePrev}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none"
+        className="absolute left-[-100px] top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none z-10" 
       >
         <span className="leading-none relative -top-2">‹</span>
       </button>
@@ -73,11 +77,12 @@ const Slider = () => {
       {/* Right Arrow */}
       <button
         onClick={handleNext}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none"
+        className="absolute right-[-100px] top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none z-10" 
       >
         <span className="leading-none relative -top-2">›</span>
       </button>
     </div>
+
   );
 };
 
