@@ -20,11 +20,15 @@ const Sidebar = () => {
         navigate(path);
     };
 
+    const handleLogoClick = () => {
+        navigate('/'); // Navigate to home page when logo is clicked
+      };
+
     return (
         <aside className="w-64 bg-gray-800 p-4 h-screen fixed pt-4">
-            <div className="text-xl font-bold flex items-center">
-                <img src={logo} alt="Logo" className="w-40 h-10 mr-2" />
-            </div>
+                <div className="text-xl font-bold flex items-center" onClick={handleLogoClick}>
+                    <img src={logo} alt="Logo" className="w-40 h-10 mr-2 cursor-pointer" />
+                </div>
             <ul className="space-y-2 mt-5">
                 <li
                     className={`py-2 pl-4 text-gray-300 font-bold cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700 ${activeClass('/dramas')}`}

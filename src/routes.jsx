@@ -15,6 +15,8 @@ import DramaList from './views/cmsDrama';
 import DramaInput from './views/cmsDramaInput';
 import Genres from './views/cmsGenres';
 import FilteredMovies from './views/filteredMovies';
+import NotFound from './views/NotFound';
+
 import ProtectedRoute from './protectedRoutes/ProtectedRoute';
 
 
@@ -29,6 +31,7 @@ const AppRoutes = ({ isAuthenticated, handleLogout }) => {
             </Route>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
+            <Route path="/notfound" element={< NotFound/>} />
 
             {/* Protected routes group */}
             <Route path="/actors" element={
