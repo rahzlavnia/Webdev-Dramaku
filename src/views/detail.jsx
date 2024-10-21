@@ -9,6 +9,7 @@ const MovieDetail = () => {
   const [commentText, setCommentText] = useState('');
   const [rating, setRating] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // State untuk status login
+  const [filterRating, setFilterRating] = useState(0); // State for filtering comments by rating
 
   // Simulasi pengecekan login
   useEffect(() => {
@@ -19,7 +20,7 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/api/movies/${id}`);
+        const response = await fetch(`http://localhost:3005/movies/${id}`);
         if (!response.ok) {
           throw new Error(`Error fetching movie details: ${response.statusText}`);
         }
@@ -75,6 +76,10 @@ const MovieDetail = () => {
       alert("Failed to add comment."); // Tampilkan alert jika gagal
     }
   };
+
+  const filteredComments = filterRating
+    ? movie.comments.filter(comment => comment.rating === filterRating)
+    : movie.comments;
 
   return (
     <div>
@@ -185,63 +190,77 @@ const MovieDetail = () => {
           <div className="flex justify-between items-center mb-4">
             <p className="text-white">({movie.comments ? movie.comments.length : 0}) Comments</p>
 
-            <select className="bg-gray-700 text-white p-2 rounded">
-              <option value="5" className="text-yellow-500">Filter by: ★★★★★</option>
-              <option value="4" className="text-yellow-500">★★★★</option>
-              <option value="3" className="text-yellow-500">★★★</option>
-              <option value="2" className="text-yellow-500">★★</option>
-              <option value="1" className="text-yellow-500">★</option>
+            <select
+              className="bg-gray-700 text-white p-2 rounded"
+              onChange={(e) => setFilterRating(Number(e.target.value))}
+              defaultValue={filterRating}
+            >
+              <option value="0" className="text-yellow-500">Filter by: All Ratings</option>
+              <option value="5" className="text-yellow-500">5 stars</option>
+              <option value="4" className="text-yellow-500">4 stars</option>
+              <option value="3" className="text-yellow-500">3 stars</option>
+              <option value="2" className="text-yellow-500">2 stars</option>
+              <option value="1" className="text-yellow-500">1 star</option>
             </select>
           </div>
 
-          {isCommentFormVisible && isLoggedIn && (
-            <div className="mb-4 p-4 bg-gray-700 rounded-lg">
-              <h3 className="text-lg font-semibold text-white mb-2">Add Your Comment</h3>
-
-              {/* Rating Bintang */}
-              <div className="flex mb-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setRating(star)}
-                    className={`cursor-pointer text-3xl ${star <= rating ? 'text-yellow-500' : 'text-gray-400'}`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-
-              {/* Input Teks untuk Komentar */}
+          {isCommentFormVisible && (
+            <div className="mb-4">
               <textarea
+                rows="3"
+                placeholder="Write your comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="w-full p-2 mb-2 rounded-lg bg-gray-800 text-white"
-                placeholder="Write your comment here..."
-                rows="3"
-              ></textarea>
-
-              <button
-                onClick={handleCommentSubmit}
-                className="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600 transition duration-300"
-              >
-                Submit Comment
-              </button>
+                className="w-full p-2 text-gray-800 rounded bg-gray-600 focus:outline-none"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <select
+                  className="bg-gray-700 text-white p-2 rounded"
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                >
+                  <option value="0" className="text-yellow-500">Rate this movie</option>
+                  <option value="5" className="text-yellow-500">5 stars</option>
+                  <option value="4" className="text-yellow-500">4 stars</option>
+                  <option value="3" className="text-yellow-500">3 stars</option>
+                  <option value="2" className="text-yellow-500">2 stars</option>
+                  <option value="1" className="text-yellow-500">1 star</option>
+                </select>
+                <button
+                  onClick={handleCommentSubmit}
+                  className="bg-teal-500 text-white px-4 py-2 rounded-full hover:bg-teal-600 transition duration-300"
+                >
+                  Submit
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Daftar komentar */}
-          {movie.comments && movie.comments.length > 0 ? (
-            movie.comments.map((comment, index) => (
-              <div key={index} className="mb-2 p-2 bg-gray-600 rounded">
-                <p className="text-yellow-500">{comment.username || 'Anonymous'}</p> {/* Default jika userName tidak ada */}
-                <p className="text-gray-400">{comment.created_at ? new Date(comment.created_at).toLocaleString() : 'Date not available'}</p> {/* Penanganan tanggal */}
-                <p className="text-white">{comment.text}</p>
-                <p className="text-gray-400">Rating: {comment.rating} ★</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-400">No comments yet.</p>
-          )}
+<div className="max-h-60 overflow-y-auto">
+  {filteredComments.length > 0 ? (
+    filteredComments.map((comment, index) => (
+      <div key={index} className="mb-2 border-b border-gray-700 pb-2">
+        <p className="text-yellow-500">{comment.user}</p>
+        <p className="text-gray-200">{comment.text}</p>
+        <p className="text-gray-200">
+          {new Date(comment.date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}{' '}
+          - {new Date(comment.date).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </p>
+        <p className="text-gray-400 text-sm">Rating: {comment.rating} stars</p>
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-400">No comments available for this rating.</p>
+  )}
+</div>
+
         </div>
       </main>
     </div>
