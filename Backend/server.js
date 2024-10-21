@@ -16,8 +16,8 @@ app.use(express.json());
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'postgres',
-  password: 'Aziiz_4321',
+  database: 'Dramaku',
+  password: 'newpassword',
   port: 5432,
 });
 
@@ -177,7 +177,7 @@ app.get("/movies", async (req, res) => {
 });
 
 
-app.get('/movies/:id', async (req, res) => {
+app.get('/api/movies/:id', async (req, res) => {
   const movieId = parseInt(req.params.id);
 
   try {
@@ -305,7 +305,7 @@ app.get('/suggestions', async (req, res) => {
 });
 
 
-app.get('/genres', async (req, res) => {
+app.get('/api/genres', async (req, res) => {
   try {
     const query = 'SELECT id, name FROM genres ORDER BY name ASC;';
     const result = await pool.query(query);
@@ -318,7 +318,7 @@ app.get('/genres', async (req, res) => {
   }
 });
 
-app.get('/countries', async (req, res) => {
+app.get('/api/countries', async (req, res) => {
   try {
     const query = 'SELECT id, name FROM countries ORDER BY name ASC;';
     const result = await pool.query(query);
@@ -331,7 +331,7 @@ app.get('/countries', async (req, res) => {
   }
 });
 
-app.get('/awards', async (req, res) => {
+app.get('/api/awards', async (req, res) => {
   try {
     const query = 'SELECT id, name, year FROM awards WHERE year IS NOT NULL ORDER BY name ASC;';
     const result = await pool.query(query);
@@ -345,7 +345,7 @@ app.get('/awards', async (req, res) => {
 });
 
 // Endpoint untuk menambahkan komentar
-app.post("/movies/:id/comments", authenticateToken, async (req, res) => {
+app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   const movieId = parseInt(req.params.id);
   const { commentText, rating } = req.body;
   const userName = req.user.username; // Ambil username dari token yang terautentikasi

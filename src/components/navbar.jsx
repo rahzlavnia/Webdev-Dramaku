@@ -445,8 +445,8 @@ useEffect(() => {
                 <label className="block text-white">Country</label>
                 <select
                   className="w-full p-2 bg-gray-900 rounded"
-                  value={filter.country} // Pastikan ini mengacu pada state yang menyimpan country_id
-                  name="country" // Menetapkan nama untuk menangani perubahan
+                  value={filter.country} 
+                  name="country" 
                   onChange={handleFilterChange}
                 >
                   <option value="">All Countries</option> {/* Default empty value */}

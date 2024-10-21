@@ -16,6 +16,8 @@ import DramaInput from './views/cmsDramaInput';
 import Genres from './views/cmsGenres';
 import FilteredMovies from './views/filteredMovies';
 import NotFound from './views/NotFound';
+import Watchlist from './views/watchlist';
+
 
 import ProtectedRoute from './protectedRoutes/ProtectedRoute';
 
@@ -28,6 +30,7 @@ const AppRoutes = ({ isAuthenticated, handleLogout }) => {
                 <Route path="search" element={<SearchResult />} />
                 <Route path="movies/:id" element={<Detail />} />
                 <Route path="filtered-movies" element={<FilteredMovies />} /> 
+                <Route path="watchlist/:username" element={<Watchlist />} />
             </Route>
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />

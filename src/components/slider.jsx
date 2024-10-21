@@ -31,22 +31,18 @@ const Slider = () => {
     return () => clearInterval(interval);
   }, [totalSlides]);
 
-  const handleNext = () => {
-    setCurrentSlide((prevSlide) => (prevSlide + 1) % totalSlides);
-  };
-
-  const handlePrev = () => {
-    setCurrentSlide((prevSlide) => (prevSlide - 1 + totalSlides) % totalSlides);
-  };
-
   const handleSlideClick = (movieId) => {
     navigate(`/movies/${movieId}`);
+  };
+
+  const handleDotClick = (index) => {
+    setCurrentSlide(index);
   };
 
   return (
     <div className="relative flex justify-center items-center mb-6">
       {/* Slider Container */}
-      <div className="overflow-hidden w-[560px] h-[315px] flex justify-center">
+      <div className="overflow-hidden w-[560px] h-[315px] flex justify-center relative">
         <div id="slider" className="flex transition-transform ease-out duration-500">
           {slides.map((slide, index) => (
             <div key={index} className="w-full flex-shrink-0 flex justify-center relative">
@@ -56,33 +52,32 @@ const Slider = () => {
                 className="w-full h-full object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 cursor-pointer"
                 onClick={() => handleSlideClick(slide.id)}
               />
-              {/* Gradient Layer bawah */}
-              <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black to-transparent transition-opacity duration-300 " />
-              <div className="absolute bottom-0 left-0 p-4 text-gray-300  text-xl font-bold transition-opacity duration-300">
+              {/* Gradient Layer at the Top */}
+              <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black to-transparent transition-opacity duration-300 pointer-events-none" />
+              {/* Title on Top */}
+              <div className="absolute top-2 left-4 text-white text-lg font-bold transition-opacity duration-300 pointer-events-none">
                 {slide.title}
               </div>
+              {/* Gradient Layer at the Bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-black to-transparent transition-opacity duration-300 pointer-events-none" />
             </div>
           ))}
         </div>
+
+        {/* Dots Navigation */}
+        <div className="absolute bottom-3 flex space-x-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              className={`w-2 h-2 rounded-full ${
+                currentSlide === index ? 'bg-white' : 'bg-gray-600'
+              } focus:outline-none`}
+              onClick={() => handleDotClick(index)}
+            />
+          ))}
+        </div>
       </div>
-
-      {/* Left Arrow */}
-      <button
-        onClick={handlePrev}
-        className="absolute left-[-100px] top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none z-10" 
-      >
-        <span className="leading-none relative -top-2">‹</span>
-      </button>
-
-      {/* Right Arrow */}
-      <button
-        onClick={handleNext}
-        className="absolute right-[-100px] top-1/2 transform -translate-y-1/2 text-white text-7xl flex items-center justify-center h-12 w-12 rounded-full bg-gray-700 hover:bg-gray-600 focus:outline-none z-10" 
-      >
-        <span className="leading-none relative -top-2">›</span>
-      </button>
     </div>
-
   );
 };
 
