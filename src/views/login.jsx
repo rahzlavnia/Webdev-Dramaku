@@ -18,9 +18,28 @@ export default function Login() {
     }
   }, []);
 
+  // Validate username can either be email or standard username
+  const validateInput = (input) => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const usernamePattern = /^[a-zA-Z0-9._-]{3,}$/; // Allows letters, numbers, dots, underscores, min 3 chars
+    return emailPattern.test(input) || usernamePattern.test(input);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Input validation
+    if (!validateInput(username)) {
+      setError("Please enter a valid email or username (at least 3 characters).");
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
     try {
       const response = await axios.post("http://localhost:3005/login", {
         username,
@@ -82,7 +101,7 @@ export default function Login() {
                 type="text"
                 id="username"
                 name="username"
-                placeholder="Username"
+                placeholder="Username or Email"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />

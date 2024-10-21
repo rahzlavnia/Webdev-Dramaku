@@ -1,28 +1,57 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import logo from '../assets/logo.png';
 
 export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate(); // Create navigate function for redirection
+
+  const validateForm = () => {
+    if (!username || username.length < 3) {
+      setError("Username must be at least 3 characters long.");
+      return false;
+    }
+    if (!email.includes("@")) {
+      setError("Please enter a valid email.");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return false;
+    }
+    return true;
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
+    setMessage('');
 
-    const response = await fetch("http://localhost:3005/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, email, password }), // Hanya kirim username, email, dan password
-    });
+    if (!validateForm()) return;
 
-    const data = await response.json();
+    try {
+      const response = await fetch("http://localhost:3005/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-    if (response.ok) {
-      alert("Registration successful! Your role is: " + data.role);
-    } else {
-      alert(data.message); // Tampilkan pesan kesalahan
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage("Registration successful! Your role is: ");
+        setTimeout(() => navigate("/login"), 2000); // Redirect to login page after 2 seconds
+      } else {
+        setError(data.message || "Registration failed.");
+      }
+    } catch (error) {
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -30,13 +59,14 @@ export default function Register() {
     <div className="bg-gray-900 text-white min-h-screen">
       <div className="flex justify-center items-center h-screen">
         <div className="flex flex-col justify-center items-center space-y-4">
-          {/* Logo */}
           <img src={logo} className="w-40 h-10" alt="Logo" />
           <div className="bg-gray-800 p-8 rounded-lg shadow-md w-96">
             <h2 className="text-white text-3xl text-center font-bold mb-6">Register</h2>
-            
+
+            {error && <p className="text-red-500 text-center">{error}</p>}
+            {message && <p className="text-green-500 text-center">{message}</p>}
+
             <form onSubmit={handleRegister}>
-              {/* Username Field */}
               <div className="mb-4">
                 <input
                   className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -50,7 +80,6 @@ export default function Register() {
                 />
               </div>
 
-              {/* Email Field */}
               <div className="mb-4">
                 <input
                   className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -64,7 +93,6 @@ export default function Register() {
                 />
               </div>
 
-              {/* Password Field */}
               <div className="mb-6">
                 <input
                   className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -78,25 +106,21 @@ export default function Register() {
                 />
               </div>
 
-                          
-                              {/* Sign-in Buttons */}
-                <div className="flex flex-col space-y-4">
-                  <button 
-                    type="submit" 
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    Register
-                  </button>
+              <div className="flex flex-col space-y-4">
+                <button
+                  type="submit"
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  Register
+                </button>
 
-                  {/* Perbaiki navigasi untuk Sign in */}
-                  <a 
-                    href="/login" 
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white p-2 rounded text-center focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    Sign in
-                  </a>
-                </div>
-
+                <a
+                  href="/login"
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white p-2 rounded text-center focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  Sign in
+                </a>
+              </div>
             </form>
           </div>
         </div>
