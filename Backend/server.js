@@ -182,7 +182,8 @@ app.get('/api/movies/:id', async (req, res) => {
 
   try {
     const query = `
-    SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability,
+      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability, m.country_id,
+             countries.name AS country_name, -- Added country name from countries table
           (SELECT string_agg(g.name, ', ') 
             FROM movie_genre mg 
             JOIN genres g ON g.id = mg.genre_id 
@@ -202,6 +203,7 @@ app.get('/api/movies/:id', async (req, res) => {
             JOIN awards w ON w.id = md.award_id 
             WHERE md.movie_id = m.id AND w.year IS NOT NULL) as awards
       FROM movies m
+      LEFT JOIN countries ON m.country_id = countries.id -- Join with countries table
       WHERE m.id = $1;
     `;
 
@@ -314,18 +316,6 @@ app.get('/api/genres', async (req, res) => {
   }
 });
 
-app.get('/api/countries', async (req, res) => {
-  try {
-    const query = 'SELECT id, name FROM countries ORDER BY name ASC;';
-    const result = await pool.query(query);
-    const countries = result.rows;
-
-    res.json(countries); 
-  } catch (error) {
-    console.error('Error fetching countries:', error);
-    res.status(500).json({ message: 'Error fetching countries', error: error.message }); // Detail error
-  }
-});
 
 app.get('/api/awards', async (req, res) => {
   try {
@@ -389,11 +379,13 @@ app.post('/api/countries', async (req, res) => {
   }
 });
 
-// Assuming you have already set up express and the PostgreSQL pool
 app.delete('/api/countries/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
+      await pool.query('UPDATE actors SET country_id = NULL WHERE country_id = $1', [id]);
+      await pool.query('UPDATE movies SET country_id = NULL WHERE country_id = $1', [id]);
+
       const result = await pool.query('DELETE FROM countries WHERE id = $1 RETURNING *', [id]);
       
       if (result.rowCount > 0) {
@@ -406,6 +398,7 @@ app.delete('/api/countries/:id', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 // Assuming you have already set up express and the PostgreSQL pool
 app.put('/api/countries/:id', async (req, res) => {
@@ -460,10 +453,12 @@ app.delete('/api/genres/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
+      await pool.query('DELETE FROM movie_genre WHERE genre_id = $1', [id]);
+      
       const result = await pool.query('DELETE FROM genres WHERE id = $1 RETURNING *', [id]);
       
       if (result.rowCount > 0) {
-          res.status(200).json({ message: 'Genre deleted successfully' });
+          res.status(200).json({ message: 'Genre and related movie associations deleted successfully' });
       } else {
           res.status(404).json({ message: 'Genre not found' });
       }

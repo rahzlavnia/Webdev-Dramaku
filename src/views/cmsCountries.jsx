@@ -11,6 +11,8 @@ const Countries = () => {
     const [currentPage, setCurrentPage] = useState(1); // Track the current page
     const [sortOrder, setSortOrder] = useState('asc'); // Track sort order
     const [searchQuery, setSearchQuery] = useState(""); // State for search input
+    const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+    const [modalMessage, setModalMessage] = useState("");
 
     const handleSort = () => {
         const sortedCountries = [...countries];
@@ -22,6 +24,24 @@ const Countries = () => {
             setSortOrder('asc'); // Set sort order to ascending
         }
         setCountries(sortedCountries);
+    };
+
+    const Modal = ({ isOpen, onClose, message }) => {
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                <div className="bg-white p-10 rounded-lg shadow-lg max-w-2xl mx-auto w-full"> {/* Max width and increased padding */}
+                    <h2 className="text-2xl text-red-500 font-bold text-center">Warning!</h2> {/* Centered heading */}
+                    <p className='text-black text-center mt-4'>{message}</p> {/* Centered message */}
+                    <div className="flex justify-center mt-10"> {/* Centering the button */}
+                        <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors" onClick={onClose}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
 
@@ -45,6 +65,16 @@ const Countries = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (country) {
+            const duplicate = countries.some(existingCountry =>
+                existingCountry.name.toLowerCase() === country.toLowerCase()
+            );
+
+            if (duplicate) {
+                setModalMessage("Country already exists!"); // Set message for modal
+                setIsModalOpen(true); // Open modal
+                return;
+            }
+
             try {
                 const response = await fetch('http://localhost:3005/api/countries', {
                     method: 'POST',
@@ -56,7 +86,7 @@ const Countries = () => {
 
                 if (response.ok) {
                     const newCountry = await response.json();
-                    setCountries((prevCountries) => [newCountry, ...prevCountries]); // Add new country to the top of the list
+                    setCountries((prevCountries) => [newCountry, ...prevCountries]);
                     setCountry(""); // Clear input field
                 } else {
                     console.error('Failed to add country');
@@ -66,6 +96,7 @@ const Countries = () => {
             }
         }
     };
+
 
     // Handle country deletion
     const handleDelete = async (id) => {
@@ -133,6 +164,7 @@ const Countries = () => {
 
     return (
         <Cms activePage="countries">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} message={modalMessage} />
             {/* Country Form */}
             <div className="w-full text-left border-white p-4 mb-6 max-w-full mx-auto flex justify-between">
                 {/* New Country Input Section */}
@@ -143,7 +175,7 @@ const Countries = () => {
                         type="text"
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
-                        className="p-1 rounded-md bg-gray-100 text-black focus:outline-none w-full" 
+                        className="p-1 rounded-md bg-gray-100 text-black focus:outline-none w-full"
                         placeholder="Input new country here"
                     />
                     <button type="submit" className="p-1 px-2 bg-teal-500 w-20 rounded-md text-white hover:bg-teal-600">Submit</button>

@@ -15,13 +15,11 @@ const MovieDetail = () => {
   const [genreColors, setGenreColors] = useState({});
 
   useEffect(() => {
-    // Fetch genres and assign colors
     const fetchGenres = async () => {
       try {
         const response = await fetch('http://localhost:3005/api/genres');
         const genres = await response.json();
 
-        // Generate colors for each genre
         const colors = generateGenreColors(genres);
         setGenreColors(colors);
       } catch (error) {
@@ -38,8 +36,8 @@ const MovieDetail = () => {
     const colorPalette = [
       '#f87171', '#fbbf24', '#34d399', '#ec4899', '#60a5fa', '#f43f5e', '#a855f7', '#10b900', '#4338ca', '#fb923c',
       '#e879f9', '#a3e635', '#2563eb', '#9ca3af', '#fca5a5', '#fde047', '#4ade80', '#f9a8d4', '#93c5fd', '#f8719d',
-      '#8b5cf6', '#bbf7d0', '#4f46e5', '#fdba74', '#e0aaff', '#bef264', '#7dd3fc', '#d1d5db', '#166534', '#65a30d',
-      '#fbcfe8', '#f97316', '#fde68a', '#0ea5e9', '#6b7280', '#22c55e', '#c084fc', '#14532d', '#2dd4bf', '#d1fae5',
+      '#8b5cf6', '#bbf7d0', '#4f46e5', '#fdba74', '#e0aaff', '#bef264', '#7dd3fc', '#d4e100', '#166534', '#65a30d',
+      '#fbcfe8', '#f97316', '#fde68a', '#0ea5e9', '#9aa800', '#22c55e', '#c084fc', '#14532d', '#2dd4bf', '#d1fae5',
       '#d946ef', '#0284c7', '#a3e635', '#6366f1', '#059669', '#facc15', '#b91c1c', '#4c1d95', '#dc2626', '#1d4ed8'
     ];
 
@@ -135,12 +133,29 @@ const MovieDetail = () => {
             </div>
             <div className="flex-grow">
               <h1 className="text-3xl text-gray-200 font-bold mb-2">{movie.title || 'Title Not Available'}</h1>
-              <p className="text-sm text-gray-400 mb-2">
+              <p className="text-sm text-gray-200 mb-2">
                 <strong>Alternative Titles:</strong> {movie.alt_title === "NaN" ? "-" : (movie.alt_title || 'N/A')}
               </p>
-              <p className="text-sm text-gray-400 mb-4">
-                <strong>Year:</strong> {movie.year || 'Unknown'}
-              </p>
+              {/* Year and Country */}
+              <div className="flex items-center gap-2 mb-3">
+                {/* Year */}
+                {movie.year ? (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium text-black bg-white">
+                    {movie.year}
+                  </span>
+                ) : (
+                  <span className="text-sm text-gray-200">Year: Unknown</span>
+                )}
+
+                {/* Country */}
+                {movie.country_name ? (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium text-black bg-white">
+                    {movie.country_name}
+                  </span>
+                ) : (
+                  <span className="text-sm text-gray-200">Country: Unknown</span>
+                )}
+              </div>
               <p className="text-sm text-gray-200 mb-4">{movie.synopsis || 'No synopsis available'}</p>
 
               {/* Genres */}
@@ -166,10 +181,10 @@ const MovieDetail = () => {
                 </svg>
                 <p className="text-sm text-gray-200">Rating: {movie.rating ? Number(movie.rating).toFixed(1) : 'N/A'}</p>
               </div>
-              <p className="text-sm text-gray-400 mb-2">
+              <p className="text-sm text-gray-200 mb-2">
                 <strong>Availability:</strong> {movie.availability || 'Unknown'}
               </p>
-              <p className="text-sm text-gray-400 mb-4"><strong>Awards:</strong> {movie.awards || 'No Awards'}</p>
+              <p className="text-sm text-gray-200 mb-4"><strong>Awards:</strong> {movie.awards || 'No Awards'}</p>
             </div>
           </div>
         ) : (
@@ -181,19 +196,18 @@ const MovieDetail = () => {
           <h2 className="text-2xl text-gray-200 font-bold mb-4">Stars</h2>
           <div className="flex justify-center space-x-7 flex-wrap">
             {movie.actors && movie.actors.length > 0 ? (
-              // Sort actors, placing those with url_photos first
               [...movie.actors]
                 .sort((a, b) => (a.url_photos ? -1 : 1)) // Sort: prioritize actors with URLs
-                .slice(0, 9) // Limit to first 9 actors
+                .slice(0, 9)
                 .map((actor, index) => (
                   <div key={index} className="flex flex-col items-center flex-shrink-0">
                     <img
                       src={actor.url_photos || 'https://via.placeholder.com/100'}
                       alt={actor.name}
-                      className="w-20 h-20 bg-gray-700 rounded-full mb-2 object-cover" // Added object-cover
+                      className="w-20 h-20 bg-gray-700 rounded-full mb-2 object-cover"
                       onError={(e) => {
-                        e.target.onerror = null; // Prevent infinite loop if the fallback image fails
-                        e.target.src = 'https://via.placeholder.com/100'; // Fallback placeholder image
+                        e.target.onerror = null;
+                        e.target.src = 'https://via.placeholder.com/100';
                       }}
                     />
                     <p className="text-gray-200 whitespace-normal break-words text-center max-w-[70px] text-xs">

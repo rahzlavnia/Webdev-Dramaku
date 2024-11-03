@@ -6,11 +6,13 @@ const ITEMS_PER_PAGE = 10;
 const Genres = () => {
     const [genres, setGenres] = useState([]);
     const [genre, setGenre] = useState("");
-    const [isEditing, setIsEditing] = useState(null); // Track which genre is being edited
-    const [editedGenreName, setEditedGenreName] = useState(""); // Store the new genre name
-    const [currentPage, setCurrentPage] = useState(1); // Track the current page
-    const [sortOrder, setSortOrder] = useState('asc'); // Track sort order
-    const [searchQuery, setSearchQuery] = useState(""); // State for search input
+    const [isEditing, setIsEditing] = useState(null); 
+    const [editedGenreName, setEditedGenreName] = useState(""); 
+    const [currentPage, setCurrentPage] = useState(1); 
+    const [sortOrder, setSortOrder] = useState('asc'); 
+    const [searchQuery, setSearchQuery] = useState(""); 
+    const [isModalOpen, setIsModalOpen] = useState(false); 
+    const [modalMessage, setModalMessage] = useState("");
 
     const handleSort = () => {
         const sortedGenres = [...genres];
@@ -34,14 +36,41 @@ const Genres = () => {
         }
     };
 
+    const Modal = ({ isOpen, onClose, message }) => {
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                <div className="bg-white p-10 rounded-lg shadow-lg max-w-2xl mx-auto w-full"> {/* Max width and increased padding */}
+                    <h2 className="text-2xl text-red-500 font-bold text-center">Warning!</h2> {/* Centered heading */}
+                    <p className='text-black text-center mt-4'>{message}</p> {/* Centered message */}
+                    <div className="flex justify-center mt-10"> {/* Centering the button */}
+                        <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors" onClick={onClose}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     useEffect(() => {
         fetchGenres();
     }, []);
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (genre) {
+            const duplicate = genres.some(existingGenre =>
+                existingGenre.name.toLowerCase() === genre.toLowerCase()
+            );
+
+            if (duplicate) {
+                setModalMessage("Genre already exists!"); 
+                setIsModalOpen(true); 
+                return;
+            }
+
             try {
                 const response = await fetch('http://localhost:3005/api/genres', {
                     method: 'POST',
@@ -53,7 +82,7 @@ const Genres = () => {
 
                 if (response.ok) {
                     const newGenre = await response.json();
-                    setGenres((prevGenres) => [newGenre, ...prevGenres]); 
+                    setGenres((prevGenres) => [newGenre, ...prevGenres]);
                     setGenre(""); 
                 } else {
                     console.error('Failed to add genre');
@@ -127,6 +156,7 @@ const Genres = () => {
 
     return (
         <Cms activePage="genres">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} message={modalMessage} />
             {/* Genre Form */}
             <div className="w-full text-left border-white p-4 mb-6 max-w-full mx-auto flex justify-between">
                 {/* New Genre Input Section */}
