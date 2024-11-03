@@ -222,10 +222,9 @@ app.get('/api/movies/:id', async (req, res) => {
 
 
 
-app.get('/search', async (req, res) => {
+app.get('/api/search', async (req, res) => {
   const searchTerm = req.query.term || ''; // Get the 'term' parameter from the query
 
-  // Define a list of stop words to ignore in the search
   const stopWords = [
     'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
     'at', 'by', 'on', 'with', 'b', 'c', 'd', 'e', 'f', 'g',
@@ -233,25 +232,21 @@ app.get('/search', async (req, res) => {
     's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'th', 'wi'
   ];
 
-  // Filter out stop words from the search term
   const filteredTerm = searchTerm
     .toLowerCase()
     .split(' ')
     .filter(word => !stopWords.includes(word) && word.trim() !== '')
     .join(' ');
 
-  // Check if the filtered term is empty
   if (!filteredTerm) {
-    return res.json([]); // Return an empty array if no valid search term remains
+    return res.json([]); 
   }
 
-  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; // Match the beginning of a word
-  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; // Format for SQL LIKE with trailing wildcard only
-
+  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; 
+  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; 
   try {
-    // SQL query to search based on title and actor's name using regex for precise title matching
     const query = `
-      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id
+      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id,
         (SELECT string_agg(g.name, ', ') 
          FROM movie_genre mg
          JOIN genres g ON g.id = mg.genre_id
@@ -280,6 +275,7 @@ app.get('/search', async (req, res) => {
     res.status(500).json({ message: 'Error fetching search results' });
   }
 });
+
 
 app.get('/suggestions', async (req, res) => {
   const searchTerm = req.query.term || '';
@@ -355,9 +351,9 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   }
 
   try {
-    // Insert komentar ke database
+    // Insert komentar ke database dengan `created_at` sebagai waktu sistem
     await pool.query(
-      "INSERT INTO comments (movie_id, username, comment, rate, status) VALUES ($1, $2, $3, $4, '1')",
+      "INSERT INTO comments (movie_id, username, comment, rate, status, created_at) VALUES ($1, $2, $3, $4, '1', NOW())",
       [movieId, userName, commentText, rating]
     );
 
@@ -369,6 +365,172 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
 });
 
 
+
+// Route to get all countries in descending order by id
+app.get('/api/countries', async (req, res) => {
+  try {
+      const result = await pool.query('SELECT * FROM countries ORDER BY id DESC');
+      res.json(result.rows);
+  } catch (error) {
+      console.error('Error fetching countries:', error);
+      res.status(500).json({ error: 'Failed to fetch countries' });
+  }
+});
+
+// Route to add a new country
+app.post('/api/countries', async (req, res) => {
+  const { name } = req.body;
+  try {
+      const result = await pool.query('INSERT INTO countries (name) VALUES ($1) RETURNING *', [name]);
+      res.status(201).json(result.rows[0]); // Return the newly created country
+  } catch (error) {
+      console.error('Error adding country:', error);
+      res.status(500).json({ error: 'Failed to add country' });
+  }
+});
+
+// Assuming you have already set up express and the PostgreSQL pool
+app.delete('/api/countries/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+      const result = await pool.query('DELETE FROM countries WHERE id = $1 RETURNING *', [id]);
+      
+      if (result.rowCount > 0) {
+          res.status(200).json({ message: 'Country deleted successfully' });
+      } else {
+          res.status(404).json({ message: 'Country not found' });
+      }
+  } catch (error) {
+      console.error('Error deleting country:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Assuming you have already set up express and the PostgreSQL pool
+app.put('/api/countries/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body; // New country name
+
+  try {
+      const result = await pool.query('UPDATE countries SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+      
+      if (result.rowCount > 0) {
+          res.status(200).json(result.rows[0]); // Return the updated country
+      } else {
+          res.status(404).json({ message: 'Country not found' });
+      }
+  } catch (error) {
+      console.error('Error updating country:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// POST new genre
+app.post('/api/genres', async (req, res) => {
+  const { name } = req.body;
+  try {
+      const result = await pool.query('INSERT INTO genres (name) VALUES ($1) RETURNING *', [name]);
+      res.status(201).json(result.rows[0]);
+  } catch (error) {
+      console.error('Error adding genre:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// PUT to update genre
+app.put('/api/genres/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  try {
+      const result = await pool.query('UPDATE genres SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+      if (result.rowCount > 0) {
+          res.status(200).json(result.rows[0]);
+      } else {
+          res.status(404).json({ message: 'Genre not found' });
+      }
+  } catch (error) {
+      console.error('Error updating genre:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+app.delete('/api/genres/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+      const result = await pool.query('DELETE FROM genres WHERE id = $1 RETURNING *', [id]);
+      
+      if (result.rowCount > 0) {
+          res.status(200).json({ message: 'Genre deleted successfully' });
+      } else {
+          res.status(404).json({ message: 'Genre not found' });
+      }
+  } catch (error) {
+      console.error('Error deleting Genre:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+      const result = await pool.query('SELECT * FROM users ORDER BY username ASC');
+      res.json(result.rows);
+  } catch (error) {
+      console.error('Error fetching countries:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// PUT to update only email
+app.put('/api/users/:username', async (req, res) => {
+  const { username } = req.params;
+  const { email } = req.body;
+
+  try {
+      if (!email) {
+          return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const updateResult = await pool.query(
+          'UPDATE users SET email = $1 WHERE username = $2 RETURNING *',
+          [email, username]
+      );
+
+      if (updateResult.rowCount > 0) {
+          res.status(200).json(updateResult.rows[0]);
+      } else {
+          res.status(404).json({ message: 'User not found' });
+      }
+  } catch (error) {
+      console.error('Error updating user email:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+app.delete('/api/users/:username', async (req, res) => {
+  const { username } = req.params;
+  console.log('Deleting user with username:', username); // Log username
+
+  try {
+      const result = await pool.query('DELETE FROM users WHERE username = $1 RETURNING *', [username]);
+      console.log('Delete result:', result); // Log result to confirm deletion
+
+      if (result.rowCount > 0) {
+          res.status(200).json({ message: 'User deleted successfully' });
+      } else {
+          res.status(404).json({ message: 'User not found' });
+      }
+  } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+

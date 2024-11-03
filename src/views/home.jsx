@@ -66,10 +66,10 @@ const Home = () => {
               year={movie.year}
               genre={movie.genre}
               rating={movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
-              onClick={() => navigate(`/movies/${movie.id}`)}
+              onClick={() => navigate(`movies/${movie.id}`)}
             />
           ))}
-        </div>
+        </div>  
       </div>
 
       {/* Show More Button */}
