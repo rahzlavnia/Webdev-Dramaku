@@ -17,7 +17,7 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch('http://localhost:3005/api/genres');
+        const response = await fetch('http://localhost:3005/genres');
         const genres = await response.json();
 
         const colors = generateGenreColors(genres);
@@ -58,7 +58,7 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3005/api/movies/${id}`);
+        const response = await fetch(`http://localhost:3005/movies/${id}`);
         if (!response.ok) {
           throw new Error(`Error fetching movie details: ${response.statusText}`);
         }

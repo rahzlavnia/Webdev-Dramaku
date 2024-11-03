@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import Cms from "../components/cms";
 
 const Comments = () => {
@@ -7,54 +8,91 @@ const Comments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectAll, setSelectAll] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
-  const [commentsData, setCommentsData] = useState([
-    { username: "Nara", rate: "⭐⭐⭐⭐⭐", drama: "[2024] Japan - Eye Love You", comments: "I love this drama. It taught me a lot about money and finance...", status: "Unapproved" },
-    { username: "Luffy", rate: "⭐⭐", drama: "[2024] Japan - Eye Love You", comments: "Meh", status: "Approved" },
-    // Add more rows as needed
-  ]);
+  const [commentsData, setCommentsData] = useState([]);
   const [visibleComments, setVisibleComments] = useState([]);
 
-  // Function to filter comments based on search term
-  useEffect(() => {
-    const filteredComments = commentsData.filter((comment) =>
-      comment.username.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setVisibleComments(filteredComments.slice(0, shows));
-  }, [searchTerm, shows, commentsData]);
+  const fetchComments = async () => {
+    try {
+      const response = await axios.get("http://localhost:3005/comments", {
+        params: { searchTerm, shows },
+      });
+      setCommentsData(response.data);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
 
   useEffect(() => {
-    const newCheckedItems = visibleComments.reduce((acc, comment, index) => {
+    fetchComments();
+  }, [searchTerm, shows]);
+
+  
+  useEffect(() => {
+    let filteredComments = commentsData;
+  
+    console.log("Comments Data:", commentsData);
+  
+    if (filter) {
+      filteredComments = filteredComments.filter(comment => {
+        console.log(`Filtering comment: ${comment.id}, rate: ${comment.rate}, filter: ${filter}`);
+        return comment.rate === parseInt(filter, 10);
+      });
+    }
+  
+    console.log("Filtered Comments:", filteredComments);
+    setVisibleComments(filteredComments.slice(0, shows));
+  
+    // Update checked items
+    const newCheckedItems = filteredComments.reduce((acc, _, index) => {
       acc[index] = selectAll;
       return acc;
     }, {});
     setCheckedItems(newCheckedItems);
-  }, [selectAll, visibleComments]);
+  }, [filter, commentsData, selectAll, shows]);
+  
+
+  const handleApprove = async () => {
+    const idsToApprove = visibleComments
+      .filter((_, index) => checkedItems[index])
+      .map(comment => comment.id);
+
+    try {
+      await Promise.all(idsToApprove.map(id => axios.put(`http://localhost:3005/comments/${id}`, { status: true })));
+      fetchComments(); // Refresh comments after updating
+    } catch (error) {
+      console.error("Error approving comments:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    const idsToDelete = visibleComments
+      .filter((_, index) => checkedItems[index])
+      .map(comment => comment.id);
+
+    try {
+      await axios.delete("http://localhost:3005/comments", { data: { ids: idsToDelete } });
+      fetchComments(); // Refresh the comments list
+    } catch (error) {
+      console.error("Error deleting comments:", error);
+    }
+  };
+
+  // Function to render stars based on the rating value
+  const renderStars = (rate) => {
+    return "★".repeat(rate) + "☆".repeat(5 - rate);
+  };
 
   const handleCheckboxChange = (index) => {
-    setCheckedItems({
-      ...checkedItems,
-      [index]: !checkedItems[index],
-    });
-  };
-
-  const handleApprove = () => {
-    // Approve selected comments logic
-    const approvedComments = visibleComments.filter((_, index) => checkedItems[index]);
-    console.log("Approved comments:", approvedComments);
-  };
-
-  const handleDelete = () => {
-    // Delete selected comments logic
-    const remainingComments = visibleComments.filter((_, index) => !checkedItems[index]);
-    setCommentsData(remainingComments);
+    setCheckedItems((prevCheckedItems) => ({
+      ...prevCheckedItems,
+      [index]: !prevCheckedItems[index],
+    }));
   };
 
   return (
-    <Cms activePage="awards">
+    <Cms activePage="comments">
       <div className="flex">
-        {/* Main content */}
         <main className="flex-1 p-4">
-          {/* Filter and Controls */}
           <div className="flex justify-between mb-4">
             <div className="flex items-center">
               <label htmlFor="filter" className="mr-2">Filtered by:</label>
@@ -98,50 +136,56 @@ const Comments = () => {
 
           {/* Comments Table */}
           <div className="overflow-y-auto rounded-xl">
-            <table className="min-w-full bg-gray-800 rounded-xl">
-              <thead className="bg-purple-900">
-                <tr>
-                  <th className="p-3">
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={selectAll}
-                      onChange={() => setSelectAll(!selectAll)}
-                    />
-                    Select All
-                  </th>
-                  <th className="p-3">Username</th>
-                  <th className="p-3">Rate</th>
-                  <th className="p-3">Drama</th>
-                  <th className="p-3">Comments</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleComments.map((comment, index) => (
-                  <tr
-                    key={index}
-                    className={index % 2 === 0 ? "bg-gray-700 hover:bg-gray-600" : "bg-blue-900 hover:bg-blue-800"}
-                  >
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={checkedItems[index] || false}
-                        onChange={() => handleCheckboxChange(index)}
-                      />
-                    </td>
-                    <td className="p-3">{comment.username}</td>
-                    <td className="p-3">{comment.rate}</td>
-                    <td className="p-3">{comment.drama}</td>
-                    <td className="p-3">{comment.comments}</td>
-                    <td className={`p-3 text-${comment.status === 'Approved' ? 'green' : 'red'}-500`}>
-                      {comment.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <table className="min-w-full bg-gray-800 rounded-xl">
+  <thead className="bg-gray-800 text-white">
+    <tr>
+      <th className="p-3">
+        <input
+          type="checkbox"
+          className="mr-2"
+          checked={selectAll}
+          onChange={() => {
+            setSelectAll(!selectAll);
+            setCheckedItems(visibleComments.reduce((acc, _, index) => {
+              acc[index] = !selectAll;
+              return acc;
+            }, {}));
+          }}
+        />
+        Select All
+      </th>
+      <th className="p-3 text-white">Username</th>
+      <th className="p-3 text-white">Rate</th>
+      <th className="p-3 text-white">Drama</th>
+      <th className="p-3 text-white">Comments</th>
+      <th className="p-3 text-white">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {visibleComments.map((comment, index) => (
+      <tr
+        key={comment.id} // Use comment.id for the key
+        className={index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
+      >
+        <td className="p-3 text-gray-800">
+          <input
+            type="checkbox"
+            className="mr-2"
+            checked={checkedItems[index] || false}
+            onChange={() => handleCheckboxChange(index)}
+          />
+        </td>
+        <td className="p-3 text-gray-800">{comment.username}</td>
+        <td className="p-3 text-gray-800">{renderStars(comment.rate)}</td>
+        <td className="p-3 text-gray-800">{comment.drama}</td>
+        <td className="p-3 text-gray-800">{comment.comment}</td>
+        <td className={`p-3 text-${comment.status ? 'green' : 'red'}-500`}>
+          {comment.status ? "Approved" : "Unapproved"}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
           </div>
 
           {/* Actions */}
@@ -153,7 +197,7 @@ const Comments = () => {
               Approve
             </button>
             <button
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
               onClick={handleDelete}
             >
               Delete
