@@ -103,80 +103,89 @@ const Users = () => {
         <main className="flex-1 p-6">
           <div className="overflow-x-auto">
             <div className="max-h-[400px] overflow-y-auto bg-gray-800 rounded-xl shadow-lg">
-              <table className="min-w-full bg-gray-800 rounded-xl">
-                <thead className="bg-purple-900">
-                  <tr>
-                    <th className="py-3 px-6 text-left text-white">#</th>
-                    <th className="py-3 px-6 text-left text-white">Username</th>
-                    <th className="py-3 px-6 text-left text-white">Email</th>
-                    <th className="py-3 px-6 text-left text-white">Role</th>
-                    <th className="py-3 px-6 text-left text-white">Created At</th>
-                    <th className="py-3 px-6 text-left text-white">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersData.map((user, index) => (
-                    <tr
-                      key={user.username}
-                      className={index % 2 === 0 ? 'bg-blue-900 hover:bg-blue-800' : 'bg-gray-700 hover:bg-gray-600'}
-                    >
-                      <td className="py-3 px-6">{index + 1}</td>
-                      <td className="py-3 px-6">{user.username}</td>
-                      <td className="py-3 px-6">
-                        {editingUser === user.username ? (
-                          <input
-                            type="email"
-                            name="email"
-                            value={user.email}
-                            className={`bg-gray-100 rounded-lg h-8 text-black ${emailError ? 'border-red-500' : ''}`}
-                            onChange={(e) => handleChange(e, user.username)}
-                          />
-                        ) : (
-                          user.email
-                        )}
-                        {editingUser === user.username && emailError && (
-                          <span className="text-red-500">{emailError}</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-6">{roleMapping[user.role_id] || 'Unknown'}</td>
-                      <td className="py-3 px-6">{formatDate(user.created_at)}</td>
-                      <td className="py-3 px-6">
-                        {editingUser === user.username ? (
-                          <>
-                            <button
-                              className="text-green-500 hover:text-green-600"
-                              onClick={() => handleUpdate(user.username)}
-                            >
-                              Save
+            <table className="min-w-full bg-gray-800 rounded-xl">
+  <thead className="bg-gray-800 text-white">
+  <tr>
+                        <th style={{ width: '100px' }} className="px-4 py-3">ID</th>
+                        {/* <th style={{ width: '100px' }} className="px-4 py-3">
+                            Genres
+                            <button onClick={handleSort} className="ml-2 text-xs">
+                                {sortOrder === 'asc' ? '▲' : '▼'}
                             </button>
-                            <button
-                              className="text-red-500 hover:text-red-600 ml-4"
-                              onClick={() => setEditingUser(null)}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              className="text-yellow-500 hover:text-yellow-600"
-                              onClick={() => startEditing(user)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="text-red-500 hover:text-red-600 ml-4"
-                              onClick={() => handleDelete(user.username)}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </td>
+                        </th> */}
+                        <th style={{ width: '100px' }} className="px-4 py-3">Username</th>
+                        <th style={{ width: '100px' }} className="px-4 py-3">Email</th>
+                        <th style={{ width: '100px' }} className="px-4 py-3">Role</th>
+                        <th style={{ width: '100px' }} className="px-4 py-3">Created At</th>
+                        <th style={{ width: '100px' }} className="py-3 text-center">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+  </thead>
+  <tbody>
+    {usersData.map((user, index) => (
+      <tr
+        key={user.username}
+        className={index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
+      >
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800">{index + 1}</td>
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800">{user.username}</td>
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800">
+          {editingUser === user.username ? (
+            <input
+              type="email"
+              name="email"
+              value={user.email}
+              className={`p-1 rounded-md bg-gray-300 text-black focus:outline-none ${emailError ? 'border-red-500' : ''}`}
+              onChange={(e) => handleChange(e, user.username)}
+            />
+          ) : (
+            user.email
+          )}
+          {editingUser === user.username && emailError && (
+            <span className="text-red-500">{emailError}</span>
+          )}
+        </td>
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800">{roleMapping[user.role_id] || 'Unknown'}</td>
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800">{formatDate(user.created_at)}</td>
+        <td className="py-3 px-6 border-b border-gray-300 text-gray-800 text-center">
+          <div className="flex justify-center space-x-2">
+            {editingUser === user.username ? (
+              <>
+                <button
+                  className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
+                  onClick={() => handleUpdate(user.username)}
+                >
+                  Save
+                </button>
+                <button
+                  className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                  onClick={() => setEditingUser(null)}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+                  onClick={() => startEditing(user)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                  onClick={() => handleDelete(user.username)}
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
             </div>
           </div>
         </main>
