@@ -246,27 +246,29 @@ app.get('/movies/:id', async (req, res) => {
 
 app.get('/api/search', async (req, res) => {
   const searchTerm = req.query.term || ''; // Get the 'term' parameter from the query
-
+  // Define a list of stop words to ignore in the search
   const stopWords = [
     'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
     'at', 'by', 'on', 'with', 'b', 'c', 'd', 'e', 'f', 'g',
     'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
     's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'th', 'wi'
   ];
-
+  // Filter out stop words from the search term
   const filteredTerm = searchTerm
     .toLowerCase()
     .split(' ')
     .filter(word => !stopWords.includes(word) && word.trim() !== '')
     .join(' ');
-
+  // Check if the filtered term is empty
   if (!filteredTerm) {
-    return res.json([]); 
+    return res.json([]); // Return an empty array if no valid search term remains
   }
+  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; // Match the beginning of a word
+  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; // Format for SQL LIKE with trailing wildcard only
 
-  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; 
-  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; 
   try {
+    // Query untuk mencari berdasarkan judul dan aktor
+    // SQL query to search based on title and actor's name using regex for precise title matching
     const query = `
       SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id,
         (SELECT string_agg(g.name, ', ') 
@@ -280,10 +282,9 @@ app.get('/api/search', async (req, res) => {
          FROM movie_actor ma
          JOIN actors a ON a.id = ma.actor_id 
          WHERE ma.movie_id = m.id) AS actors
-      FROM movies m
+         FROM movies m
       LEFT JOIN movie_actor ma ON ma.movie_id = m.id
-      LEFT JOIN actors a ON a.id = ma.actor_id
-      WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
+      LEFT JOIN actors a ON a.id = ma.actor_id WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
         OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE $2
       GROUP BY m.id
       ORDER BY m.id ASC;
@@ -297,7 +298,6 @@ app.get('/api/search', async (req, res) => {
     res.status(500).json({ message: 'Error fetching search results' });
   }
 });
-
 
 app.get('/suggestions', async (req, res) => {
   const searchTerm = req.query.term || '';
