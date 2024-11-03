@@ -1,23 +1,38 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const multer = require('multer');
+const path = require('path');
 const app = express();
 const port = 3005;
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
+const fs = require('fs');
+const cloudinary = require('cloudinary').v2; // Cloudinary SDK
 
 // Setup CORS to allow frontend access
 app.use(cors());
 app.use(express.json());
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
 
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: 'dtk2yqead',
+  api_key: '417426998347937',
+  api_secret: 'nhiBmTCI347fdl2BLyHrW7moYTE',
+});
+
+
+const upload = multer({ storage: multer.memoryStorage() }); // Using memory storage for direct upload to Cloudinary
 
 // PostgreSQL connection details
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'Dramaku',
-  password: 'newpassword',
+  database: 'postgres',
+  password: 'Aziiz_4321',
   port: 5432,
 });
 
@@ -34,6 +49,15 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+// Set storage engine
+// const storage = multer.diskStorage({
+//   filename: (req, file, cb) => {
+//     cb(null, `${Date.now()}-${file.originalname}`);
+//   },
+// });
+
+// const upload = multer({ storage });
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -177,7 +201,7 @@ app.get("/movies", async (req, res) => {
 });
 
 
-app.get('/api/movies/:id', async (req, res) => {
+app.get('/movies/:id', async (req, res) => {
   const movieId = parseInt(req.params.id);
 
   try {
@@ -318,7 +342,7 @@ app.get('/api/genres', async (req, res) => {
   }
 });
 
-app.get('/api/countries', async (req, res) => {
+app.get('/countries', async (req, res) => {
   try {
     const query = 'SELECT id, name FROM countries ORDER BY name ASC;';
     const result = await pool.query(query);
@@ -331,23 +355,23 @@ app.get('/api/countries', async (req, res) => {
   }
 });
 
-app.get('/api/awards', async (req, res) => {
-  try {
-    const query = 'SELECT id, name, year FROM awards WHERE year IS NOT NULL ORDER BY name ASC;';
-    const result = await pool.query(query);
-    const awards = result.rows;
+// app.get('/api/awards', async (req, res) => {
+//   try {
+//     const query = 'SELECT id, name, year FROM awards WHERE year IS NOT NULL ORDER BY name ASC;';
+//     const result = await pool.query(query);
+//     const awards = result.rows;
 
-    res.json(awards);
-  } catch (error) {
-    console.error('Error fetching awards:', error);
-    res.status(500).json({ message: 'Error fetching awards', error: error.message });
-  }
-});
+//     res.json(awards);
+//   } catch (error) {
+//     console.error('Error fetching awards:', error);
+//     res.status(500).json({ message: 'Error fetching awards', error: error.message });
+//   }
+// });
 
 // Endpoint untuk menambahkan komentar
 app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   const movieId = parseInt(req.params.id);
-  const { commentText, rating } = req.body;
+  const { commentText, rating, status } = req.body; // Ambil status dari request body
   const userName = req.user.username; // Ambil username dari token yang terautentikasi
 
   if (!commentText || !rating) {
@@ -357,8 +381,8 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   try {
     // Insert komentar ke database
     await pool.query(
-      "INSERT INTO comments (movie_id, username, comment, rate, status) VALUES ($1, $2, $3, $4, '1')",
-      [movieId, userName, commentText, rating]
+      "INSERT INTO comments (movie_id, username, comment, rate, status) VALUES ($1, $2, $3, $4, $5)", // Ubah query untuk menggunakan $5 untuk status
+      [movieId, userName, commentText, rating, status] // Tambahkan status di akhir array
     );
 
     res.status(201).json({ message: "Comment added successfully." });
@@ -369,6 +393,256 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
 });
 
 
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+// // Endpoint untuk mendapatkan semua negara
+// app.get("/countries", async (req, res) => {
+//   try {
+//     const result = await pool.query("SELECT id, name FROM Countries");
+//     res.json(result.rows);
+//   } catch (error) {
+//     console.error("Error fetching countries:", error);
+//     res.status(500).send("Server error");
+//   }
+// });
+
+// Endpoint untuk mendapatkan semua awards
+app.get("/awards", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT awards.id, Countries.name AS country, awards.name AS award, awards.year FROM awards JOIN Countries ON awards.country_id = Countries.id;"); // Ganti dengan query sesuai struktur database Anda
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching awards:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+app.post("/awards", async (req, res) => {
+  const { awards, year, country_id } = req.body;
+
+  try {
+    // Validate `country_id`
+    console.log("Received data:", req.body);
+    const countryExists = await pool.query("SELECT 1 FROM countries WHERE id = $1", [country_id]);
+
+    if (countryExists.rowCount === 0) {
+      return res.status(400).send("Invalid country_id. Please select a valid country.");
+    }
+
+    // Insert the award and log result
+    const result = await pool.query(
+      "INSERT INTO awards (name, year, country_id) VALUES ($1, $2, $3) RETURNING *",
+      [awards, year, country_id] // Ganti name dengan awards
+    );
+    
+
+    console.log("Insert result:", result.rows[0]); // Log the inserted row
+    res.send("Award created successfully");
+  } catch (error) {
+    if (error.code === '23503') {
+      res.status(400).send("Foreign key constraint error: Invalid country_id.");
+    } else {
+      console.error("Error creating award:", error);
+      res.status(500).send("Server error");
+    }
+  }
+});
+
+
+app.put("/awards/:id", async (req, res) => {
+  const { id } = req.params;
+  const { country_id, name, year } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE awards SET country_id = $1, name = $2, year = $3 WHERE id = $4",
+      [country_id, name, year, id]
+    );
+    res.send("Award updated successfully");
+  } catch (error) {
+    console.error("Error updating award:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+
+app.delete("/awards/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Hapus data terkait dari tabel movie_award terlebih dahulu
+    await pool.query("DELETE FROM movie_award WHERE award_id = $1", [id]);
+    // Lalu hapus dari tabel awards
+    await pool.query("DELETE FROM awards WHERE id = $1", [id]);
+    res.send("Award deleted successfully");
+  } catch (error) {
+    console.error("Error deleting award:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+// Endpoint to get all actors with country names
+app.get('/actors', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT a.id, a.name, a.birthdate, a.url_photos, c.name AS country_name
+      FROM actors a
+      JOIN countries c ON a.country_id = c.id
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching actors:', error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+
+// Endpoint to add a new actor
+app.post('/actors', upload.single('photo'), async (req, res) => {
+  const { country_id, name, birth_date } = req.body;
+
+  try {
+    // Check if file is provided
+    if (!req.file) {
+      return res.status(400).json({ error: 'Photo is required' });
+    }
+
+    // Upload the image to Cloudinary and get the URL
+    const url_photos = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve(result.secure_url); // Capture the secure URL from the result
+      });
+      uploadStream.end(req.file.buffer); // Pass the file buffer to Cloudinary
+    });
+
+    // Insert the actor into the database
+    const result = await pool.query(
+      'INSERT INTO actors (country_id, name, birthdate, url_photos) VALUES ($1, $2, $3, $4) RETURNING *',
+      [country_id, name, birth_date, url_photos]
+    );
+
+    return res.json({ success: true, actor: result.rows[0] });
+  } catch (error) {
+    console.error('Error inserting actor:', error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+
+// Endpoint to update an actor
+app.put('/actors/:id', upload.single('photo'), async (req, res) => {
+  const { id } = req.params;
+  const { country_id, name, birth_date } = req.body;
+  let url_photos = null;
+
+  try {
+    if (req.file) {
+      // Upload to Cloudinary if a new photo is provided
+      const cloudinaryResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            return reject(new Error('Cloudinary upload error'));
+          }
+          resolve(result.secure_url);
+        }).end(req.file.buffer); // Use the file buffer from multer
+      });
+      url_photos = cloudinaryResult;
+    }
+
+    await pool.query(
+      'UPDATE actors SET country_id = $1, name = $2, birthdate = $3, url_photos = COALESCE($4, url_photos) WHERE id = $5',
+      [country_id, name, birth_date, url_photos, id]
+    );
+
+    res.json({ success: true, message: 'Actor updated' });
+  } catch (error) {
+    console.error('Error updating actor:', error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+// Endpoint to delete an actor
+app.delete('/actors/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+
+    await pool.query("DELETE FROM movie_actor WHERE actor_id = $1", [id]);
+    await pool.query('DELETE FROM actors WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Actor deleted' });
+  } catch (error) {
+    console.error('Error deleting actor:', error);
+    res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+
+// Updated GET endpoint to fetch comments with movie titles
+app.get("/comments", async (req, res) => {
+  try {
+    const { searchTerm = "", shows = 10 } = req.query;
+    const result = await pool.query(
+      `SELECT comments.id, comments.comment, comments.status, comments.rate, 
+              comments.username, comments.created_at, movies.title AS drama 
+       FROM comments 
+       JOIN movies ON comments.movie_id = movies.id 
+       WHERE comments.username ILIKE $1 
+       LIMIT $2`,
+      [`%${searchTerm}%`, shows]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+
+// Add a new comment
+app.post("/comments", async (req, res) => {
+  const { username, rate, drama, comments, status } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO comments (username, rate, drama, comments, status) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [username, rate, drama, comments, status]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+app.put("/comments/:id", async (req, res) => {
+  const { id } = req.params; // This should be a string
+  const { status } = req.body; // Make sure to only take status
+  try {
+    const result = await pool.query(
+      "UPDATE comments SET status = $1 WHERE id = $2 RETURNING *",
+      [status, id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating comment:", error.message); // Log detailed error
+    res.status(500).send("Server error");
+  }
+});
+
+
+// Delete comments
+app.delete("/comments", async (req, res) => {
+  const { ids } = req.body; // Expecting an array of IDs
+  try {
+    await pool.query("DELETE FROM comments WHERE id = ANY($1)", [ids]);
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Error deleting comments:", error);
+    res.status(500).send("Server error");
+  }
+});
+

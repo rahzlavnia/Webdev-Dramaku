@@ -1,168 +1,212 @@
-import React, { useState, useEffect } from "react";
-import Cms from "../components/cms";
+// import React, { useState, useEffect } from "react";
+// import axios from "axios";
+// import Cms from "../components/cms";
 
-const Comments = () => {
-  const [filter, setFilter] = useState("");
-  const [shows, setShows] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectAll, setSelectAll] = useState(false);
-  const [checkedItems, setCheckedItems] = useState({});
-  const [commentsData, setCommentsData] = useState([
-    { username: "Nara", rate: "⭐⭐⭐⭐⭐", drama: "[2024] Japan - Eye Love You", comments: "I love this drama. It taught me a lot about money and finance...", status: "Unapproved" },
-    { username: "Luffy", rate: "⭐⭐", drama: "[2024] Japan - Eye Love You", comments: "Meh", status: "Approved" },
-    // Add more rows as needed
-  ]);
-  const [visibleComments, setVisibleComments] = useState([]);
+// const Comments = () => {
+//   const [filter, setFilter] = useState("");
+//   const [shows, setShows] = useState(10);
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [selectAll, setSelectAll] = useState(false);
+//   const [checkedItems, setCheckedItems] = useState({});
+//   const [commentsData, setCommentsData] = useState([]);
+//   const [visibleComments, setVisibleComments] = useState([]);
 
-  // Function to filter comments based on search term
-  useEffect(() => {
-    const filteredComments = commentsData.filter((comment) =>
-      comment.username.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setVisibleComments(filteredComments.slice(0, shows));
-  }, [searchTerm, shows, commentsData]);
+//   const fetchComments = async () => {
+//     try {
+//       const response = await axios.get("http://localhost:3005/comments", {
+//         params: { searchTerm, shows },
+//       });
+//       setCommentsData(response.data);
+//     } catch (error) {
+//       console.error("Error fetching comments:", error);
+//     }
+//   };
 
-  useEffect(() => {
-    const newCheckedItems = visibleComments.reduce((acc, comment, index) => {
-      acc[index] = selectAll;
-      return acc;
-    }, {});
-    setCheckedItems(newCheckedItems);
-  }, [selectAll, visibleComments]);
+//   useEffect(() => {
+//     fetchComments();
+//   }, [searchTerm, shows]);
 
-  const handleCheckboxChange = (index) => {
-    setCheckedItems({
-      ...checkedItems,
-      [index]: !checkedItems[index],
-    });
-  };
+  
+//   useEffect(() => {
+//     let filteredComments = commentsData;
+  
+//     console.log("Comments Data:", commentsData);
+  
+//     if (filter) {
+//       filteredComments = filteredComments.filter(comment => {
+//         console.log(`Filtering comment: ${comment.id}, rate: ${comment.rate}, filter: ${filter}`);
+//         return comment.rate === parseInt(filter, 10);
+//       });
+//     }
+  
+//     console.log("Filtered Comments:", filteredComments);
+//     setVisibleComments(filteredComments.slice(0, shows));
+  
+//     // Update checked items
+//     const newCheckedItems = filteredComments.reduce((acc, _, index) => {
+//       acc[index] = selectAll;
+//       return acc;
+//     }, {});
+//     setCheckedItems(newCheckedItems);
+//   }, [filter, commentsData, selectAll, shows]);
+  
 
-  const handleApprove = () => {
-    // Approve selected comments logic
-    const approvedComments = visibleComments.filter((_, index) => checkedItems[index]);
-    console.log("Approved comments:", approvedComments);
-  };
+//   const handleApprove = async () => {
+//     const idsToApprove = visibleComments
+//       .filter((_, index) => checkedItems[index])
+//       .map(comment => comment.id);
 
-  const handleDelete = () => {
-    // Delete selected comments logic
-    const remainingComments = visibleComments.filter((_, index) => !checkedItems[index]);
-    setCommentsData(remainingComments);
-  };
+//     try {
+//       await Promise.all(idsToApprove.map(id => axios.put(`http://localhost:3005/comments/${id}`, { status: true })));
+//       fetchComments(); // Refresh comments after updating
+//     } catch (error) {
+//       console.error("Error approving comments:", error);
+//     }
+//   };
 
-  return (
-    <Cms activePage="awards">
-      <div className="flex">
-        {/* Main content */}
-        <main className="flex-1 p-4">
-          {/* Filter and Controls */}
-          <div className="flex justify-between mb-4">
-            <div className="flex items-center">
-              <label htmlFor="filter" className="mr-2">Filtered by:</label>
-              <select
-                id="filter"
-                className="bg-gray-700 text-white p-2 rounded"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option value="">None</option>
-                <option value="5" className="text-yellow-500">★★★★★</option>
-                <option value="4" className="text-yellow-500">★★★★</option>
-                <option value="3" className="text-yellow-500">★★★</option>
-                <option value="2" className="text-yellow-500">★★</option>
-                <option value="1" className="text-yellow-500">★</option>
-              </select>
-            </div>
+//   const handleDelete = async () => {
+//     const idsToDelete = visibleComments
+//       .filter((_, index) => checkedItems[index])
+//       .map(comment => comment.id);
 
-            <div className="flex items-center">
-              <label htmlFor="shows" className="mr-2">Shows:</label>
-              <select
-                id="shows"
-                className="bg-gray-700 p-2 rounded text-white"
-                value={shows}
-                onChange={(e) => setShows(parseInt(e.target.value, 10))}
-              >
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-              </select>
-            </div>
+//     try {
+//       await axios.delete("http://localhost:3005/comments", { data: { ids: idsToDelete } });
+//       fetchComments(); // Refresh the comments list
+//     } catch (error) {
+//       console.error("Error deleting comments:", error);
+//     }
+//   };
 
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-gray-700 p-2 rounded text-white"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+//   // Function to render stars based on the rating value
+//   const renderStars = (rate) => {
+//     return "★".repeat(rate) + "☆".repeat(5 - rate);
+//   };
 
-          {/* Comments Table */}
-          <div className="overflow-y-auto rounded-xl">
-            <table className="min-w-full bg-gray-800 rounded-xl">
-              <thead className="bg-purple-900">
-                <tr>
-                  <th className="p-3">
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={selectAll}
-                      onChange={() => setSelectAll(!selectAll)}
-                    />
-                    Select All
-                  </th>
-                  <th className="p-3">Username</th>
-                  <th className="p-3">Rate</th>
-                  <th className="p-3">Drama</th>
-                  <th className="p-3">Comments</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleComments.map((comment, index) => (
-                  <tr
-                    key={index}
-                    className={index % 2 === 0 ? "bg-gray-700 hover:bg-gray-600" : "bg-blue-900 hover:bg-blue-800"}
-                  >
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        className="mr-2"
-                        checked={checkedItems[index] || false}
-                        onChange={() => handleCheckboxChange(index)}
-                      />
-                    </td>
-                    <td className="p-3">{comment.username}</td>
-                    <td className="p-3">{comment.rate}</td>
-                    <td className="p-3">{comment.drama}</td>
-                    <td className="p-3">{comment.comments}</td>
-                    <td className={`p-3 text-${comment.status === 'Approved' ? 'green' : 'red'}-500`}>
-                      {comment.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+//   const handleCheckboxChange = (index) => {
+//     setCheckedItems((prevCheckedItems) => ({
+//       ...prevCheckedItems,
+//       [index]: !prevCheckedItems[index],
+//     }));
+//   };
 
-          {/* Actions */}
-          <div className="mt-4">
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              onClick={handleApprove}
-            >
-              Approve
-            </button>
-            <button
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-              onClick={handleDelete}
-            >
-              Delete
-            </button>
-          </div>
-        </main>
-      </div>
-    </Cms>
-  );
-};
+//   return (
+//     <Cms activePage="comments">
+//       <div className="flex">
+//         <main className="flex-1 p-4">
+//           <div className="flex justify-between mb-4">
+//             <div className="flex items-center">
+//               <label htmlFor="filter" className="mr-2">Filtered by:</label>
+//               <select
+//                 id="filter"
+//                 className="bg-gray-700 text-white p-2 rounded"
+//                 value={filter}
+//                 onChange={(e) => setFilter(e.target.value)}
+//               >
+//                 <option value="">None</option>
+//                 <option value="5" className="text-yellow-500">★★★★★</option>
+//                 <option value="4" className="text-yellow-500">★★★★</option>
+//                 <option value="3" className="text-yellow-500">★★★</option>
+//                 <option value="2" className="text-yellow-500">★★</option>
+//                 <option value="1" className="text-yellow-500">★</option>
+//               </select>
+//             </div>
 
-export default Comments;
+//             <div className="flex items-center">
+//               <label htmlFor="shows" className="mr-2">Shows:</label>
+//               <select
+//                 id="shows"
+//                 className="bg-gray-700 p-2 rounded text-white"
+//                 value={shows}
+//                 onChange={(e) => setShows(parseInt(e.target.value, 10))}
+//               >
+//                 <option value="10">10</option>
+//                 <option value="20">20</option>
+//                 <option value="50">50</option>
+//               </select>
+//             </div>
+
+//             <input
+//               type="text"
+//               placeholder="Search..."
+//               className="bg-gray-700 p-2 rounded text-white"
+//               value={searchTerm}
+//               onChange={(e) => setSearchTerm(e.target.value)}
+//             />
+//           </div>
+
+//           {/* Comments Table */}
+//           <div className="overflow-y-auto rounded-xl">
+//             <table className="min-w-full bg-gray-800 rounded-xl">
+//               <thead className="bg-purple-900">
+//                 <tr>
+//                   <th className="p-3">
+//                     <input
+//                       type="checkbox"
+//                       className="mr-2"
+//                       checked={selectAll}
+//                       onChange={() => {
+//                         setSelectAll(!selectAll);
+//                         setCheckedItems(visibleComments.reduce((acc, _, index) => {
+//                           acc[index] = !selectAll;
+//                           return acc;
+//                         }, {}));
+//                       }}
+//                     />
+//                     Select All
+//                   </th>
+//                   <th className="p-3">Username</th>
+//                   <th className="p-3">Rate</th>
+//                   <th className="p-3">Drama</th>
+//                   <th className="p-3">Comments</th>
+//                   <th className="p-3">Status</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {visibleComments.map((comment, index) => (
+//                   <tr
+//                     key={comment.id} // Use comment.id for the key
+//                     className={index % 2 === 0 ? "bg-gray-700 hover:bg-gray-600" : "bg-blue-900 hover:bg-blue-800"}
+//                   >
+//                     <td className="p-3">
+//                       <input
+//                         type="checkbox"
+//                         className="mr-2"
+//                         checked={checkedItems[index] || false}
+//                         onChange={() => handleCheckboxChange(index)}
+//                       />
+//                     </td>
+//                     <td className="p-3">{comment.username}</td>
+//                     <td className="p-3">{renderStars(comment.rate)}</td>
+//                     <td className="p-3">{comment.drama}</td>
+//                     <td className="p-3">{comment.comment}</td>
+//                     <td className={`p-3 text-${comment.status ? 'green' : 'red'}-500`}>
+//                       {comment.status ? "Approved" : "Unapproved"}
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+
+//           {/* Actions */}
+//           <div className="mt-4">
+//             <button
+//               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+//               onClick={handleApprove}
+//             >
+//               Approve
+//             </button>
+//             <button
+//               className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2"
+//               onClick={handleDelete}
+//             >
+//               Delete
+//             </button>
+//           </div>
+//         </main>
+//       </div>
+//     </Cms>
+//   );
+// };
+
+// export default Comments;
