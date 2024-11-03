@@ -485,7 +485,7 @@ app.delete('/api/genres/:id', async (req, res) => {
 // Get all users
 app.get('/api/users', async (req, res) => {
   try {
-      const result = await pool.query('SELECT * FROM users ORDER BY username ASC');
+      const result = await pool.query('SELECT * FROM users WHERE banned = false ORDER BY username ASC');
       res.json(result.rows);
   } catch (error) {
       console.error('Error fetching countries:', error);
@@ -493,48 +493,27 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// PUT to update only email
-app.put('/api/users/:username', async (req, res) => {
-  const { username } = req.params;
-  const { email } = req.body;
+app.put('/api/users/:username/banned', async (req, res) => {
+  const { username } = req.params; // Get the username from the URL parameters
+  const { banned } = req.body; // Get the banned status from the request body
+
+  console.log('Banned status:', banned); // Log the banned status
 
   try {
-      if (!email) {
-          return res.status(400).json({ message: 'Email is required' });
-      }
+    // Update the user's banned status in the database
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-      const updateResult = await pool.query(
-          'UPDATE users SET email = $1 WHERE username = $2 RETURNING *',
-          [email, username]
-      );
+    // Update the banned status
+    user.banned = banned; // Assuming banned is a boolean field
+    await user.save(); // Save the updated user back to the database
 
-      if (updateResult.rowCount > 0) {
-          res.status(200).json(updateResult.rows[0]);
-      } else {
-          res.status(404).json({ message: 'User not found' });
-      }
+    res.status(200).json({ message: `User ${username} banned status updated successfully` });
   } catch (error) {
-      console.error('Error updating user email:', error);
-      res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-app.delete('/api/users/:username', async (req, res) => {
-  const { username } = req.params;
-  console.log('Deleting user with username:', username); // Log username
-
-  try {
-      const result = await pool.query('DELETE FROM users WHERE username = $1 RETURNING *', [username]);
-      console.log('Delete result:', result); // Log result to confirm deletion
-
-      if (result.rowCount > 0) {
-          res.status(200).json({ message: 'User deleted successfully' });
-      } else {
-          res.status(404).json({ message: 'User not found' });
-      }
-  } catch (error) {
-      console.error('Error deleting user:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error banning user:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

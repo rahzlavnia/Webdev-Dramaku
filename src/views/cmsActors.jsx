@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Make sure to install axios if you haven't already
 import Cms from '../components/cms';
 
 const CmsActors = () => {
