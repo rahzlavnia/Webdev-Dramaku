@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import Cms from '../components/cms';
 
+const ITEMS_PER_PAGE = 8;
+
 const CmsAwards = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     country_id: '',
     name: '',
@@ -10,37 +11,14 @@ const CmsAwards = () => {
   });
   const [awardsData, setAwardsData] = useState([]);
   const [countries, setCountries] = useState([]);
+  const [sortField, setSortField] = useState('name'); // Default sorting field
+  const [sortOrder, setSortOrder] = useState('asc'); // Default sorting order
+  const [awards, setAwards] = useState([]);
   const [editId, setEditId] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: 'year', order: 'asc' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editedAward, setEditedAward] = useState(null);
 
-  // Sort the awardsData by specified key
-  const handleSort = (key) => {
-    const sortedAwards = [...awardsData];
-    let order = 'asc';
-  
-    // Toggle the sort order if sorting the same key again
-    if (sortConfig.key === key && sortConfig.order === 'asc') {
-      order = 'desc';
-    } 
-  
-    sortedAwards.sort((a, b) => {
-      if (key === 'year') {
-        return order === 'asc' ? a.year - b.year : b.year - a.year;
-      } else if (key === 'country') {
-        return order === 'asc' ? a.country.localeCompare(b.country) : b.country.localeCompare(a.country);
-      } else if (key === 'award') {
-        const awardA = a.award || ''; // Default to empty string if null
-        const awardB = b.award || ''; // Default to empty string if null
-        return order === 'asc' ? awardA.localeCompare(awardB) : awardB.localeCompare(awardA);
-      }
-      return 0;
-    });
-  
-    setAwardsData(sortedAwards); // Update the state with the sorted data
-    setSortConfig({ key, order }); // Set the sort configuration
-  };
-  
-  
   useEffect(() => {
     fetchCountries();
     fetchAwards();
@@ -48,7 +26,7 @@ const CmsAwards = () => {
 
   const fetchCountries = async () => {
     try {
-      const response = await fetch('http://localhost:3005/countries');
+      const response = await fetch('http://localhost:3005/api/countries');
       const data = await response.json();
       setCountries(data);
     } catch (error) {
@@ -58,7 +36,7 @@ const CmsAwards = () => {
 
   const fetchAwards = async () => {
     try {
-      const response = await fetch('http://localhost:3005/awards');
+      const response = await fetch('http://localhost:3005/api/awards');
       const data = await response.json();
       setAwardsData(data);
     } catch (error) {
@@ -66,276 +44,356 @@ const CmsAwards = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
   const handleEditClick = (award) => {
-    setEditId(award.id);
-    setFormData({
-      country_id: award.country_id || '',
-      awards: award.award || '', // Menampilkan penghargaan sebelumnya
-      year: award.year || '',
+    setEditId(award.id); // Set ID of award being edited
+    setEditedAward({
+      country_id: award.country_id,
+      name: award.name,
+      year: award.year,
     });
   };
 
-  const handleSaveClick = async (id) => {
-    if (!formData.country_id) {
-      console.error("Country ID is missing or invalid.");
-      return;
-    }
+  const handleCancelClick = () => {
+    setEditId(null); // Reset edit mode
+    setEditedAward(null);
+  };
 
+  const handleSaveClick = async () => {
     try {
-      await fetch(`http://localhost:3005/awards/${id}`, {
+      await fetch(`http://localhost:3005/awards/${editId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          country_id: formData.country_id,
-          award: formData.awards,
-          year: formData.year,
-        }),
+        body: JSON.stringify(editedAward),
       });
-      setEditId(null);
-      fetchAwards(); // Refresh data in the table
+      setEditId(null); // Exit edit mode
+      setEditedAward(null); // Clear edited award data
+      fetchAwards(); // Refresh awards data
     } catch (error) {
       console.error('Error updating award:', error);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!id) {
-      console.error("Invalid ID:", id);
-      return;
-    }
-    try {
-      const response = await fetch(`http://localhost:3005/awards/${id}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
-        fetchAwards(); // Refresh data after delete
-      } else {
-        console.error("Failed to delete award");
-      }
-    } catch (error) {
-      console.error("Error deleting award:", error);
-    }
+  const handleChangeEdit = (e) => {
+    setEditedAward({
+      ...editedAward,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent the default form submission behavior
+
+     // Ensure formData has the expected structure
+  const formattedData = {
+    country_id: parseInt(formData.country_id, 10), // Convert to number if needed
+    name: formData.name.trim(), // Trim any whitespace
+    year: parseInt(formData.year, 10), // Convert to number if needed
+  };
+
+  console.log("Submitting award:", JSON.stringify(formattedData));
+
     try {
+      // Send a POST request to the awards API
       const response = await fetch("http://localhost:3005/awards", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData), // Make sure formData has the correct structure
       });
+
+      // Check if the response is okay
       if (response.ok) {
         console.log("Award created successfully");
+        fetchAwards(); // Refresh the awards data
+        setFormData({ country_id: '', name: '', year: '' }); // Reset form data after submission
       } else {
-        console.error("Error creating award:", await response.text());
+        const errorText = await response.text(); // Get the response text for debugging
+        console.error("Error creating award:", errorText);
       }
     } catch (error) {
       console.error("Server error:", error);
     }
-    fetchAwards();
   };
+
+  const filteredAwards = awardsData.filter(award =>
+    award.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+  );
+
+  const handleSort = (field) => {
+    const sortedAwards = [...awardsData];
+
+    if (sortField === field && sortOrder === 'asc') {
+      // If already sorted by this field in ascending order, sort in descending order
+      sortedAwards.sort((a, b) => {
+        if (field === 'year') {
+          return b.year - a.year; // For numeric sorting
+        }
+        return b.name.localeCompare(a.name); // For string sorting
+      });
+      setSortOrder('desc');
+    } else {
+      // Sort in ascending order
+      sortedAwards.sort((a, b) => {
+        if (field === 'year') {
+          return a.year - b.year; // For numeric sorting
+        }
+        return a.name.localeCompare(b.name); // For string sorting
+      });
+      setSortOrder('asc');
+    }
+
+    setAwardsData(sortedAwards);
+    setSortField(field); // Update the current sorting field
+  };
+
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this award?");
+    if (confirmDelete) {
+      try {
+        const response = await fetch(`http://localhost:3005/awards/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          fetchAwards(); // Refresh the awards after deletion
+        } else {
+          console.error('Failed to delete award');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+  };
+
+  // Adjust pagination logic based on filteredAwards
+  const totalPages = Math.ceil(filteredAwards.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentAwards = filteredAwards.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <Cms activePage="awards">
-      <div className="w-full p-0">
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col space-y-4">
-            <div className="flex space-x-4">
-              <div>
-                <label className="text-white font-bold" htmlFor="country">
-                  Country
-                </label>
-                <select
-                  id="country"
-                  name="country_id"
-                  className="rounded-lg ml-4 bg-gray-100 text-black focus:outline-none h-8 w-40"
-                  value={formData.country_id}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Country</option>
-                  {countries.map((country) => (
-                    <option key={country.id} value={country.id}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* Main Container for Form and Table */}
+      <div className="w-full p-4 mb-5 max-w-full mx-auto">
 
-              <div>
-                <label className="text-white font-bold" htmlFor="awards">
-                  Awards
-                </label>
-                <input
-                  id="awards"
-                  type="text"
-                  name="awards"
-                  className="rounded-lg ml-5 bg-gray-100 text-black focus:outline-none h-8 w-40"
-                  value={formData.awards}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-white font-bold" htmlFor="year">
-                Year
-              </label>
-              <input
-                id="year"
-                type="text"
-                name="year"
-                className="rounded-lg ml-5 bg-gray-100 text-black focus:outline-none h-8 w-40"
-                value={formData.year}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <button type="submit" className="bg-teal-600 w-20 rounded-xl text-white hover:bg-teal-700 h-8">
-                Submit
-              </button>
-            </div>
-          </div>
-        </form>
+        {/* Award Form and Search Bar */}
+        <div className="flex justify-between items-center mb-7">
+          {/* New Award Input Section */}
+          <form onSubmit={handleSubmit} className="flex flex-col w-full">
+            <table className="w-full">
+              <tbody>
+                {/* Row 1: Country, Year, and Submit Button */}
+                <tr>
+                  <td colSpan="3"> {/* Award Name spans columns 1-3 */}
+                    <label className="text-white font-bold" htmlFor="name">Award Name:</label>
+                    <input
+                      id="name"
+                      type="text"
+                      name="name"
+                      className="p-1 rounded-md bg-gray-100 text-black focus:outline-none h-8 w-full"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Input new Award here"
+                    />
+                  </td>
+                </tr>
 
-        <div className="flex justify-end mb-4">
-          <input
-            type="text"
-            placeholder="Search in Table"
-            className="bg-gray-700 p-2 rounded w-1/4"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+                {/* Row Award Name and Search Bar */}
+                <tr>
+                  <td className="pr-2 pt-3">
+                    <label className="text-white font-bold mb-1" htmlFor="country">Country: </label>
+                    <select
+                      id="country"
+                      name="country_id"
+                      className="p-1 rounded-md bg-gray-100 text-black focus:outline-none h-8 w-2/5"
+                      value={formData.country_id}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Country</option>
+                      {countries.map((country) => (
+                        <option key={country.id} value={country.id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="pl-2 pt-3">
+                    <label className="text-white font-bold mb-1" htmlFor="year">Year: </label>
+                    <input
+                      id="year"
+                      type="text"
+                      name="year"
+                      className="p-1 rounded-md bg-gray-100 text-black focus:outline-none h-8 w-2/5"
+                      placeholder="YYYY"
+                      value={formData.year}
+                      onChange={handleChange}
+                    />
+                  </td>
+                  <td className="pl-2 pt-3">
+                    <button type="submit" className="p-1 px-2 bg-teal-500 rounded-md text-white hover:bg-teal-600">
+                      Submit
+                    </button>
+                  </td>
+                  <td className="pl-2 pt-3" colSpan="2"> {/* Search Bar spans columns 4-5 */}
+                    <input
+                      type="text"
+                      placeholder="Search award..."
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="p-1 rounded-lg bg-gray-100 text-black focus:outline-none w-full"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </form>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="max-h-[400px] overflow-y-auto rounded-xl">
-          <table className="min-w-full bg-gray-800 rounded-xl">
-  <thead className="bg-gray-800 text-white">
-  <tr>
-          <th className="py-3 px-6 text-left">ID</th>
-          <th className="py-3 px-6 text-left">
-            Countries
-            <button onClick={() => handleSort('country')} className="ml-2 text-xs">
-              {sortConfig.key === 'country' ? (sortConfig.order === 'asc' ? '▲' : '▼') : '▲▼'}
-            </button>
-          </th>
-          <th className="py-3 px-6 text-left">
-            Years
-            <button onClick={() => handleSort('year')} className="ml-2 text-xs">
-              {sortConfig.key === 'year' ? (sortConfig.order === 'asc' ? '▲' : '▼') : '▲▼'}
-            </button>
-          </th>
-          <th className="py-3 px-6 text-left">
-            Awards
-            <button onClick={() => handleSort('award')} className="ml-2 text-xs">
-              {sortConfig.key === 'award' ? (sortConfig.order === 'asc' ? '▲' : '▼') : '▲▼'}
-            </button>
-          </th>
-          <th className="py-3 px-6 text-left">Actions</th>
-        </tr>
-  </thead>
-  <tbody>
-    {awardsData
-      .filter((item) =>
-        item.award ? item.award.toLowerCase().includes(searchTerm.toLowerCase()) : false
-      )
-      .map((award, index) => (
-        <tr
-          key={award.id}
-          className={index % 2 === 0 ? 'bg-white' : 'bg-gray-100'}
-        >
-          <td className="py-3 px-6 border-b border-gray-300 text-gray-800">{index + 1}</td>
-          <td className="py-3 px-6 border-b border-gray-300 text-gray-800">
-            {editId === award.id ? (
-              <select
-                name="country_id"
-                value={formData.country_id}
-                onChange={handleChange}
-                className="p-1 rounded-md bg-gray-300 text-black focus:outline-none"
-              >
-                <option value="">Select Country</option>
-                {countries.map((country) => (
-                  <option key={country.id} value={country.id}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              award.country
-            )}
-          </td>
-          <td className="py-3 px-6 border-b border-gray-300 text-gray-800">
-            {editId === award.id ? (
-              <input
-                type="text"
-                name="year"
-                value={formData.year}
-                onChange={handleChange}
-                className="p-1 rounded-md bg-gray-300 text-black focus:outline-none"
-              />
-            ) : (
-              award.year
-            )}
-          </td>
-          <td className="py-3 px-6 border-b border-gray-300 text-gray-800">
-            {editId === award.id ? (
-              <input
-                type="text"
-                name="awards"
-                value={formData.awards}
-                onChange={handleChange}
-                className="p-1 rounded-md bg-gray-300 text-black focus:outline-none"
-              />
-            ) : (
-              award.award
-            )}
-          </td>
-          <td className="py-3 px-6 border-b border-gray-300 text-gray-800 text-center">
-              <div className="flex justify-center space-x-2">
-                {editId === award.id ? (
-                  <button
-                    onClick={() => handleSaveClick(award.id)}
-                    className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
-                      onClick={() => handleEditClick(award)}
+        {/* Awards List Table */}
+        <table className="w-full text-left border-collapse p-4 mb-5 max-w-full mx-auto">
+          <thead className="bg-gray-800 text-white">
+            <tr>
+              <th className="w-1/7 px-4 py-3">ID</th>
+              <th className="w-1/7 px-4 py-3">Country</th>
+              <th className="w-1/7 px-4 py-3">Year
+                <button onClick={() => handleSort('year')} className="ml-2 text-xs">
+                  {sortField === 'year' && sortOrder === 'asc' ? '▲' : '▼'}
+                </button>
+              </th>
+              <th className="w-1/7 px-4 py-3">Award
+                <button onClick={() => handleSort('name')} className="ml-2 text-xs">
+                  {sortField === 'name' && sortOrder === 'asc' ? '▲' : '▼'}
+                </button>
+              </th>
+              <th className="w-1/7 px-4 py-3"></th>
+              <th className="w-1/7 px-4 py-3"></th>
+              <th className="w-1/7 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentAwards.map((award, index) => (
+              <tr key={award.id} className="bg-white">
+                <td className="w-1/7 py-3 px-4 border-b border-gray-300 text-gray-800">
+                  {startIndex + index + 1}
+                </td>
+                <td className="w-1/7 py-3 px-4 border-b border-gray-300 text-gray-800">
+                  {editId === award.id ? (
+                    <select
+                      name="country_id"
+                      value={editedAward.country_id}
+                      onChange={handleChangeEdit}
+                      className="rounded-lg bg-gray-200 text-black focus:outline-none h-8 w-3/4"
                     >
-                      Edit
-                    </button>
-                    <button
-                      className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
-                      onClick={() => handleDelete(award.id)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
-            </td>
+                      <option value="">Select Country</option>
+                      {countries.map((country) => (
+                        <option key={country.id} value={country.id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    award.country_name ? award.country_name : 'Unknown'
+                  )}
+                </td>
+                <td className="w-1/7 py-3 px-4 border-b border-gray-300 text-gray-800">
+                  {editId === award.id ? (
+                    <input
+                      type="text"
+                      name="year"
+                      value={editedAward.year}
+                      onChange={handleChangeEdit}
+                      className="p-2 rounded-lg bg-gray-200 text-black focus:outline-none h-8 w-1/5"
+                    />
+                  ) : (
+                    award.year || "None"
+                  )}
+                </td>
+                <td className="w-1/7 py-3 px-4 border-b border-gray-300 text-gray-800 break-words max-w-xs" colSpan="3">
+                  {editId === award.id ? (
+                    <input
+                      type="text"
+                      name="name"
+                      value={editedAward.name}
+                      onChange={handleChangeEdit}
+                      className="p-1 rounded-lg bg-gray-200 text-black focus:outline-none h-8 w-full"
+                    />
+                  ) : (
+                    award.name
+                  )}
+                </td>
 
-        </tr>
-      ))}
-  </tbody>
-</table>
+                <td className="w-1/7 py-3 px-4 border-b border-gray-300 text-gray-800 text-center">
+                  {editId === award.id ? (
+                    <>
+                      <button
+                        className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 mr-2"
+                        onClick={handleCancelClick}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
+                        onClick={handleSaveClick}
+                      >
+                        Save
+                      </button>
 
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 mr-2"
+                        onClick={() => handleEditClick(award)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                        onClick={() => handleDelete(award.id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-          </div>
+        {/* Pagination Controls */}
+        <div className="flex justify-center space-x-2 mt-4">
+          <button
+            className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}>{"<<"}
+          </button>
+          <button
+            className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}>{"<"}
+          </button>
+          <span className="flex items-center">
+            {currentPage} of {totalPages}
+          </span>
+          <button
+            className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}>{">"}
+          </button>
+          <button
+            className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}>{">>"}
+          </button>
         </div>
       </div>
     </Cms>

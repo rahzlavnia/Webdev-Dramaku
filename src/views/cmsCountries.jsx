@@ -165,126 +165,132 @@ const Countries = () => {
     return (
         <Cms activePage="countries">
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} message={modalMessage} />
-            {/* Country Form */}
-            <div className="w-full text-left border-white p-4 mb-6 max-w-full mx-auto flex justify-between">
-                {/* New Country Input Section */}
-                <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-2/5"> {/* Keeping width longer */}
-                    <label className="text-white font-bold" htmlFor="country">Country</label>
-                    <input
-                        id="country"
-                        type="text"
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                        className="p-1 rounded-md bg-gray-100 text-black focus:outline-none w-full"
-                        placeholder="Input new country here"
-                    />
-                    <button type="submit" className="p-1 px-2 bg-teal-500 w-20 rounded-md text-white hover:bg-teal-600">Submit</button>
-                </form>
 
-                {/* Search Bar Section */}
-                <div className="flex items-center w-2/5 justify-end">
-                    <input
-                        type="text"
-                        placeholder="Search country..."
-                        onChange={(e) => setSearchQuery(e.target.value)} // Add state management for search
-                        className="p-1 rounded-lg bg-gray-100 text-black focus:outline-none w-1/2"
-                    />
+            {/* Main Container for Form and Table */}
+            <div className="w-full p-4 mb-5 max-w-full mx-auto">
+
+                {/* Country Form and Search Bar */}
+                <div className="flex justify-between items-center mb-10">
+
+                    {/* New Country Input Section */}
+                    <form onSubmit={handleSubmit} className="flex items-center space-x-4 w-2/5">
+                        <label className="text-white font-bold" htmlFor="country">Country</label>
+                        <input
+                            id="country"
+                            type="text"
+                            value={country}
+                            onChange={(e) => setCountry(e.target.value)}
+                            className="p-1 rounded-md bg-gray-100 text-black focus:outline-none w-full"
+                            placeholder="Input new country here"
+                        />
+                        <button type="submit" className="p-1 px-2 bg-teal-500 rounded-md text-white hover:bg-teal-600">Submit</button>
+                    </form>
+
+                    {/* Search Bar Section */}
+                    <div className="w-1/2 flex justify-end">
+                        <input
+                            type="text"
+                            placeholder="Search country..."
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="p-1 rounded-lg bg-gray-100 text-black focus:outline-none w-1/2"
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Country List Table */}
-            <table className="w-full text-left border-collapse p-4 mb-5 max-w-full mx-auto">
-                <thead className="bg-gray-800 text-white">
-                    <tr>
-                        <th style={{ width: '100px' }} className="px-4 py-3">ID</th>
-                        <th style={{ width: '100px' }} className="px-4 py-3">
-                            Countries
-                            <button onClick={handleSort} className="ml-2 text-xs">
-                                {sortOrder === 'asc' ? '▲' : '▼'}
-                            </button>
-                        </th>
-                        <th style={{ width: '100px' }} className="px-4 py-3"></th>
-                        <th style={{ width: '100px' }} className="px-4 py-3"></th>
-                        <th style={{ width: '100px' }} className="px-4 py-3"></th>
-                        <th style={{ width: '100px' }} className="px-4 py-3"></th>
-                        <th style={{ width: '100px' }} className="py-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentCountries.map((country, index) => (
-                        <tr key={country.id} className="bg-white">
-                            <td className="py-3 px-4 border-b border-gray-300 text-gray-800">{startIndex + index + 1}</td> {/* Column 1 */}
-                            <td className="py-3 px-4 border-b border-gray-300 text-gray-800" colSpan="5"> {/* Column 2 */}
-                                {isEditing === country.id ? (
-                                    <input
-                                        type="text"
-                                        value={editedCountryName || country.name} // Show previous value if editing
-                                        onChange={(e) => setEditedCountryName(e.target.value)}
-                                        className="p-1 rounded-md bg-gray-300 text-black focus:outline-none"
-                                        placeholder="New country name"
-                                    />
-                                ) : (
-                                    country.name
-                                )}
-                            </td>
-                            <td className="py-3 px-4 border-b border-gray-300 text-gray-800 text-center"> {/* Actions column */}
-                                {isEditing === country.id ? (
-                                    <>
-                                        <button
-                                            className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
-                                            onClick={handleCancelEdit}>Cancel
-                                        </button>
-                                        <button
-                                            className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 ml-2"
-                                            onClick={() => handleRename(country.id)}>Save
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button
-                                            className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
-                                            onClick={() => {
-                                                setIsEditing(country.id); // Start editing
-                                                setEditedCountryName(country.name); // Set the edited country name
-                                            }}>Edit
-                                        </button>
-                                        <button
-                                            className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 ml-2"
-                                            onClick={() => handleDelete(country.id)}>Delete
-                                        </button>
-                                    </>
-                                )}
-                            </td>
+                {/* Country List Table */}
+                <table className="w-full text-left border-collapse p-4 mb-5 max-w-full mx-auto">
+                    <thead className="bg-gray-800 text-white">
+                        <tr>
+                            <th style={{ width: '100px' }} className="px-4 py-3">ID</th>
+                            <th style={{ width: '100px' }} className="px-4 py-3">
+                                Countries
+                                <button onClick={handleSort} className="ml-2 text-xs">
+                                    {sortOrder === 'asc' ? '▲' : '▼'}
+                                </button>
+                            </th>
+                            <th style={{ width: '100px' }} className="px-4 py-3"></th>
+                            <th style={{ width: '100px' }} className="px-4 py-3"></th>
+                            <th style={{ width: '100px' }} className="px-4 py-3"></th>
+                            <th style={{ width: '100px' }} className="px-4 py-3"></th>
+                            <th style={{ width: '100px' }} className="py-3 text-center">Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {currentCountries.map((country, index) => (
+                            <tr key={country.id} className="bg-white">
+                                <td className="py-3 px-4 border-b border-gray-300 text-gray-800">{startIndex + index + 1}</td> {/* Column 1 */}
+                                <td className="py-3 px-4 border-b border-gray-300 text-gray-800" colSpan="5"> {/* Column 2 */}
+                                    {isEditing === country.id ? (
+                                        <input
+                                            type="text"
+                                            value={editedCountryName || country.name} // Show previous value if editing
+                                            onChange={(e) => setEditedCountryName(e.target.value)}
+                                            className="p-1 rounded-md bg-gray-300 text-black focus:outline-none"
+                                            placeholder="New country name"
+                                        />
+                                    ) : (
+                                        country.name
+                                    )}
+                                </td>
+                                <td className="py-3 px-4 border-b border-gray-300 text-gray-800 text-center"> {/* Actions column */}
+                                    {isEditing === country.id ? (
+                                        <>
+                                            <button
+                                                className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                                                onClick={handleCancelEdit}>Cancel
+                                            </button>
+                                            <button
+                                                className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 ml-2"
+                                                onClick={() => handleRename(country.id)}>Save
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+                                                onClick={() => {
+                                                    setIsEditing(country.id); // Start editing
+                                                    setEditedCountryName(country.name); // Set the edited country name
+                                                }}>Edit
+                                            </button>
+                                            <button
+                                                className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600 ml-2"
+                                                onClick={() => handleDelete(country.id)}>Delete
+                                            </button>
+                                        </>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
 
-            {/* Pagination Controls */}
-            <div className="flex justify-center space-x-2 mt-4">
-                <button
-                    className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-400 font-bold"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}>{"<<"}
-                </button>
-                <button
-                    className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-400 font-bold"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}>{"<"}
-                </button>
-                <span className="flex items-center">
-                    {currentPage} of {totalPages}
-                </span>
-                <button
-                    className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-400 font-bold"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}>{">"}
-                </button>
-                <button
-                    className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-400 font-bold"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}>{">>"}
-                </button>
+                {/* Pagination Controls */}
+                <div className="flex justify-center space-x-2 mt-4">
+                    <button
+                        className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}>{"<<"}
+                    </button>
+                    <button
+                        className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}>{"<"}
+                    </button>
+                    <span className="flex items-center">
+                        {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}>{">"}
+                    </button>
+                    <button
+                        className="p-2 bg-gray-200 text-black rounded-md hover:bg-gray-100 font-bold"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}>{">>"}
+                    </button>
+                </div>
             </div>
         </Cms>
     );

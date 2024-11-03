@@ -14,8 +14,6 @@ const cloudinary = require('cloudinary').v2; // Cloudinary SDK
 // Setup CORS to allow frontend access
 app.use(cors());
 app.use(express.json());
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); 
-
 
 // Cloudinary configuration
 cloudinary.config({
@@ -31,8 +29,8 @@ const upload = multer({ storage: multer.memoryStorage() }); // Using memory stor
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'postgres',
-  password: 'Aziiz_4321',
+  database: 'Dramaku',
+  password: 'newpassword',
   port: 5432,
 });
 
@@ -50,14 +48,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// Set storage engine
-// const storage = multer.diskStorage({
-//   filename: (req, file, cb) => {
-//     cb(null, `${Date.now()}-${file.originalname}`);
-//   },
-// });
-
-// const upload = multer({ storage });
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -173,7 +163,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.get("/movies", async (req, res) => {
+app.get('/movies', async (req, res) => {
   try {
     const query = `
       SELECT m.id, m.title, m.year, m.images, m.synopsis, m.availability, m.country_id,
@@ -408,6 +398,7 @@ app.delete('/api/countries/:id', async (req, res) => {
   try {
       await pool.query('UPDATE actors SET country_id = NULL WHERE country_id = $1', [id]);
       await pool.query('UPDATE movies SET country_id = NULL WHERE country_id = $1', [id]);
+      await pool.query('UPDATE awards SET country_id = NULL WHERE country_id = $1', [id]);
 
       const result = await pool.query('DELETE FROM countries WHERE id = $1 RETURNING *', [id]);
       
@@ -548,18 +539,31 @@ app.delete('/api/users/:username', async (req, res) => {
 });
 
 // Endpoint untuk mendapatkan semua awards
-app.get("/awards", async (req, res) => {
+app.get('/api/awards', async (req, res) => {
   try {
-    const result = await pool.query("SELECT awards.id, Countries.name AS country, awards.name AS award, awards.year FROM awards JOIN Countries ON awards.country_id = Countries.id;"); // Ganti dengan query sesuai struktur database Anda
+    const result = await pool.query(`
+      SELECT 
+        awards.id, 
+        awards.name, 
+        awards.year, 
+        countries.name AS country_name
+      FROM 
+        awards
+      LEFT JOIN 
+        countries ON awards.country_id = countries.id
+        ORDER BY id DESC
+    `);
+    // Send the response with the awards data
     res.json(result.rows);
   } catch (error) {
-    console.error("Error fetching awards:", error);
-    res.status(500).send("Server error");
+    console.error("Error retrieving awards:", error); // Log the error for debugging
+    res.status(500).json({ message: "Server error", error: error.message }); // Send a more informative error response
   }
 });
 
-app.post("/awards", async (req, res) => {
-  const { awards, year, country_id } = req.body;
+
+app.post('/awards', async (req, res) => {
+  const { name, year, country_id } = req.body;
 
   try {
     // Validate `country_id`
@@ -570,12 +574,16 @@ app.post("/awards", async (req, res) => {
       return res.status(400).send("Invalid country_id. Please select a valid country.");
     }
 
+    // Check if awards value is present
+    if (!name) {
+      return res.status(400).send("Award name cannot be null or empty.");
+    }
+
     // Insert the award and log result
     const result = await pool.query(
       "INSERT INTO awards (name, year, country_id) VALUES ($1, $2, $3) RETURNING *",
-      [awards, year, country_id] // Ganti name dengan awards
+      [name, year, country_id] // Ensure "awards" is correctly passed
     );
-    
 
     console.log("Insert result:", result.rows[0]); // Log the inserted row
     res.send("Award created successfully");
@@ -590,7 +598,8 @@ app.post("/awards", async (req, res) => {
 });
 
 
-app.put("/awards/:id", async (req, res) => {
+
+app.put('/awards/:id', async (req, res) => {
   const { id } = req.params;
   const { country_id, name, year } = req.body;
 
@@ -607,7 +616,7 @@ app.put("/awards/:id", async (req, res) => {
 });
 
 
-app.delete("/awards/:id", async (req, res) => {
+app.delete('/awards/:id', async (req, res) => {
   const { id } = req.params;
   try {
     // Hapus data terkait dari tabel movie_award terlebih dahulu

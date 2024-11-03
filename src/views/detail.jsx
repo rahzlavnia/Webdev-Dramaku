@@ -17,7 +17,7 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const response = await fetch('http://localhost:3005/genres');
+        const response = await fetch('http://localhost:3005/api/genres');
         const genres = await response.json();
 
         const colors = generateGenreColors(genres);

@@ -9,7 +9,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // eslint-disable-line no-unused-vars
 
   useEffect(() => {
     const token = localStorage.getItem("token");
