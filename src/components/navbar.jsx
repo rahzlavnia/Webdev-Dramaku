@@ -232,7 +232,7 @@ useEffect(() => {
 
   const fetchMovies = async () => {
     try {
-      const response = await fetch(`http://localhost:3005/api/movies`);
+      const response = await fetch('http://localhost:3005/api/movies');
       const data = await response.json();
 
       if (data.length > 0) {

@@ -1,6 +1,6 @@
 // src/components/Sidebar.jsx
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // Use useNavigate instead of useHistory
+import {useLocation, useNavigate } from 'react-router-dom'; // Use useNavigate instead of useHistory
 import logo from '../assets/logo.png';
 
 const Sidebar = () => {

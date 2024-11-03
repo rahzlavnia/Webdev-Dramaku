@@ -32,7 +32,7 @@ const Slider = () => {
   }, [totalSlides]);
 
   const handleSlideClick = (movieId) => {
-    navigate(`/movies/${movieId}`);
+    navigate(`movies/${movieId}`);
   };
 
   const handleDotClick = (index) => {
@@ -55,7 +55,7 @@ const Slider = () => {
               {/* Gradient Layer at the Top */}
               <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-black to-transparent transition-opacity duration-300 pointer-events-none" />
               {/* Title on Top */}
-              <div className="absolute top-2 left-4 text-white text-lg font-bold transition-opacity duration-300 pointer-events-none">
+              <div className="absolute top-2 left-4 text-gray-300 text-lg font-bold transition-opacity duration-300 pointer-events-none">
                 {slide.title}
               </div>
               {/* Gradient Layer at the Bottom */}
