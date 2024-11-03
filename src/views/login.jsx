@@ -28,37 +28,50 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     // Input validation
     if (!validateInput(username)) {
       setError("Please enter a valid email or username (at least 3 characters).");
       return;
     }
-
+  
     if (!password || password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
-
+  
     try {
       const response = await axios.post("http://localhost:3005/login", {
         username,
         password,
       });
-
+  
+      // Check for banned status in the response
+      if (response.data.banned) {
+        setError("Your account has been banned. Please contact support.");
+        localStorage.removeItem("token"); // Remove token if set
+        return; // Prevent further execution
+      }
+  
       localStorage.setItem("token", response.data.token);
       setIsAuthenticated(true);
-
-      if (response.data.role === "Admin" ) {
+  
+      // Redirect based on role
+      if (response.data.role === "Admin") {
         window.location.href = "/";
       } else {
         window.location.href = "/";
       }
     } catch (error) {
-      localStorage.removeItem("token");
-      setError("Login failed. Please check your credentials.");
+      if (error.response && error.response.status === 403) {
+        setError("Your account has been banned. Please contact support.");
+      } else {
+        localStorage.removeItem("token");
+        setError("Login failed. Please check your credentials.");
+      }
     }
-  };
+  };  
+
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
@@ -68,7 +81,7 @@ export default function Login() {
       localStorage.setItem("token", response.data.token);
       setIsAuthenticated(true);
 
-      if (response.data.role === "Admin" ) {
+      if (response.data.role === "Admin") {
         window.location.href = "/";
       } else {
         window.location.href = "/";
