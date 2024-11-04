@@ -67,12 +67,14 @@ const CmsActors = () => {
         throw new Error("Failed to fetch actors");
       }
       const data = await response.json();
-      setActorsData(data); // Assuming you have a state variable to store actors
+      console.log(data); // Cek apakah data sudah memiliki kolom birth_date
+      setActorsData(data); 
+      setSortedActors(data); // Salin data ke sortedActors untuk ditampilkan
     } catch (error) {
       console.error("Error fetching actors:", error);
     }
   };
-
+  
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -111,27 +113,32 @@ const CmsActors = () => {
   };
 
   const handleSaveClick = async (id) => {
-    const actorData = {
-      country: formData.country,
-      actorName: formData.actorName,
-      birthDate: formData.birthDate,
-      photo: previewImage, // Send the updated photo URL
-    };
-
+    const formDataForUpdate = new FormData();
+    formDataForUpdate.append('country_id', formData.country);
+    formDataForUpdate.append('name', formData.actorName);
+    formDataForUpdate.append('birth_date', formData.birthDate);
+    if (formData.photo) {
+      formDataForUpdate.append('photo', formData.photo);
+    }
+  
     try {
-      await fetch(`http://localhost:3005/actors/${id}`, {
+      const response = await fetch(`http://localhost:3005/actors/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(actorData),
+        body: formDataForUpdate,
       });
+  
+      if (!response.ok) {
+        const errorResponse = await response.text();
+        throw new Error(`Error: ${errorResponse || response.statusText}`);
+      }
+  
       setEditId(null);
-      fetchActors(); // Refresh data in the table
+      fetchActors();
     } catch (error) {
       console.error('Error updating actor:', error);
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -326,50 +333,56 @@ const CmsActors = () => {
                 </tr>
               </thead>
               <tbody>
-                {actorsData
-                  .filter(actor => actor.name && actor.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  .map((actor, index) => (
-                    <tr
-                      key={actor.id} // Unique key for each actor
-                      className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                    >
-                      <td className="py-3 px-6 text-center text-gray-800">{index + 1}</td> {/* Change text color */}
-                      <td className="py-3 px-6 text-center text-gray-800">{actor.country_name}</td> {/* Change text color */}
-                      <td className="py-3 px-6 text-center text-gray-800">{actor.name}</td> {/* Change text color */}
-                      <td className="py-3 px-6 text-center text-gray-800">{formatBirthdate(actor.birthdate)}</td> {/* Change text color */}
-                      <td className="py-3 px-6 text-center">
-                        <img src={actor.url_photos} alt={actor.name} className="w-20 h-20 rounded" />
-                      </td>
-                      <td className="py-3 px-6 border-b border-gray-300 text-center">
-                        <div className="flex justify-center space-x-2">
-                          {editId === actor.id ? (
-                            <button
-                              onClick={() => handleSaveClick(actor.id)} // Change 'award.id' to 'actor.id'
-                              className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
-                            >
-                              Save
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
-                                onClick={() => handleEditClick(actor)} // Change 'award' to 'actor'
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
-                                onClick={() => handleDelete(actor.id)} // Change 'award.id' to 'actor.id'
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
+  {actorsData
+    .filter(actor => actor.name && actor.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .map((actor, index) => (
+      <tr
+        key={actor.id}
+        className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+      >
+        <td className="py-3 px-6 text-center text-gray-800">{index + 1}</td>
+        <td className="py-3 px-6 text-center text-gray-800">{actor.country_name}</td>
+        <td className="py-3 px-6 text-center text-gray-800">{actor.name}</td> {/* Pastikan nama field */}
+        <td className="py-3 px-6 text-center text-gray-800">{formatBirthdate(actor.birthdate)}</td> {/* Sesuaikan nama field */}
+        <td className="py-3 px-6 text-center">
+        <img 
+          src={actor.url_photos} 
+          alt={actor.name} 
+          className="w-40 h-40 object-cover rounded-lg shadow-md" 
+        />
+        </td>
+
+        <td className="py-3 px-6 border-b border-gray-300 text-center">
+          <div className="flex justify-center space-x-2">
+            {editId === actor.id ? (
+              <button
+                onClick={() => handleSaveClick(actor.id)}
+                className="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600"
+              >
+                Save
+              </button>
+            ) : (
+              <>
+                <button
+                  className="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+                  onClick={() => handleEditClick(actor)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="bg-red-500 text-white px-2 py-1 rounded-md hover:bg-red-600"
+                  onClick={() => handleDelete(actor.id)}
+                >
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+    ))}
+</tbody>
+
             </table>
 
           </div>
