@@ -34,7 +34,7 @@ const Navbar = () => {
     setFilter((prevFilter) => ({
       ...prevFilter,
       [name]: value,
-    }));  
+    }));
   };
 
   const applyFilter = () => {
@@ -353,6 +353,19 @@ const Navbar = () => {
     navigate('/');
   };
 
+
+  {/* Clear Filter Function */ }
+  const clearFilter = () => {
+    setFilter({
+      genre: '',
+      country: '',
+      year: '',
+      avail: '',
+      sort: '',
+      award: '',
+    });
+  };
+
   return (
     <nav className="flex justify-between items-center bg-gray-900 p-4">
       {/* Logo */}
@@ -413,12 +426,20 @@ const Navbar = () => {
           <div className="p-4">
             <div className="flex justify-between items-center"> {/* Flex untuk menyelaraskan item */}
               <h4 className="text-lg font-semibold text-white">Filter by:</h4>
-              <button
-                onClick={applyFilter}
-                className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-              >
-                Apply Filter
-              </button>
+              <div>
+                <button
+                  onClick={applyFilter}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 mr-2"
+                >
+                  Apply Filter
+                </button>
+                <button
+                  onClick={clearFilter}
+                  className="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-12 gap-4 mt-4">
 
@@ -533,63 +554,62 @@ const Navbar = () => {
 
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* Watchlist and Profile with Dropdown */}
-      <div className="flex items-center">
-        <a
-          href="/watchlist"
-          className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2"
-        >
-          <i className="fas fa-bookmark mr-2"></i> Watchlist
-        </a>
-
-        {!isAuthenticated ? (
+        {/* Watchlist and Profile with Dropdown */}
+        <div className="flex items-center">
           <a
-            href="/login"
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full"
+            href="/watchlist"
+            className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2"
           >
-            Login
+            <i className="fas fa-bookmark mr-2"></i> Watchlist
           </a>
-        ) : (
-          <div className="relative">
-            <div
-              id="profileButton"
-              onClick={toggleProfileDropdown}
-              className="bg-blue-300 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer"
+
+          {!isAuthenticated ? (
+            <a
+              href="/login"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full"
             >
-              {username ? username.charAt(0).toUpperCase() : ''}
-            </div>
-            {isProfileDropdownVisible && (
+              Login
+            </a>
+          ) : (
+            <div className="relative">
               <div
-                id="profileDropdown"
-                className="absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg z-10"
-                style={{ top: '100%', right: '0' }}
+                id="profileButton"
+                onClick={toggleProfileDropdown}
+                className="bg-blue-300 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer"
               >
-                {/* Conditionally render based on role */}
-                {userRole === 'Admin' && (
+                {username ? username.charAt(0).toUpperCase() : ''}
+              </div>
+              {isProfileDropdownVisible && (
+                <div
+                  id="profileDropdown"
+                  className="absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg z-10"
+                  style={{ top: '100%', right: '0' }}
+                >
+                  {/* Conditionally render based on role */}
+                  {userRole === 'Admin' && (
+                    <button
+                      onClick={() => handleNavigation('/users')}
+                      className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
+                    >
+                      CMSAdmin
+                    </button>
+                  )}
+
+                  {/* Logout option */}
                   <button
-                    onClick={() => handleNavigation('/users')}
+                    onClick={handleLogout}
                     className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
                   >
-                    CMSAdmin
+                    Logout
                   </button>
-                )}
-
-                {/* Logout option */}
-                <button
-                  onClick={handleLogout}
-                  className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
     </nav>
   );

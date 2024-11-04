@@ -786,6 +786,28 @@ app.delete("/comments", async (req, res) => {
   }
 });
 
+// Add a new movie
+app.post('/api/movies', async (req, res) => {
+  const { title, alt_title, year, availability, synopsis, trailer } = req.body;
+
+  try {
+    const query = `
+      INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+    `;
+    const values = [title, alt_title, availability, synopsis, trailer, year];
+    
+    // Execute the query
+    const result = await pool.query(query, values);
+    
+    // Return the inserted movie
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error adding movie:", error);
+    res.status(500).send("Server error");
+  }
+});
+
 
 
 app.listen(port, () => {

@@ -17,8 +17,6 @@ import Genres from './views/cmsGenres';
 import FilteredMovies from './views/filteredMovies';
 import NotFound from './views/NotFound';
 import Watchlist from './views/watchlist';
-import ForgotPassword from './components/forgotComponent';
-import ResetPassword from './components/resetComponent';
 
 
 import ProtectedRoute from './protectedRoutes/ProtectedRoute';
@@ -37,8 +35,6 @@ const AppRoutes = ({ isAuthenticated, handleLogout }) => {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="/notfound" element={< NotFound/>} />
-            <Route path="/reset" element={< ResetPassword/>} />
-            <Route path="/forgot" element={< ForgotPassword/>} />
 
             {/* Protected routes group */}
             <Route path="/actors" element={

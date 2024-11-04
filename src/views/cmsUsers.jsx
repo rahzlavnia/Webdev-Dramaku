@@ -130,7 +130,7 @@ const Users = () => {
     return (
         <Cms activePage="users">
             <div className="w-full p-4 mb-5 max-w-full mx-auto">
-                <div className="flex justify-end mb-7">
+                <div className="flex justify-end mb-10">
                     <input
                         type="text"
                         placeholder="Search user..."
