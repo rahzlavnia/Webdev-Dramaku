@@ -54,7 +54,7 @@ app.post("/login", async (req, res) => {
 
   try {
     const result = await pool.query(
-      "SELECT username, password, role_id FROM users WHERE username = $1",
+      "SELECT username, password, role_id, banned FROM users WHERE username = $1",
       [username]
     );
 
@@ -64,23 +64,29 @@ app.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
+    // Check if the user is banned
+    if (user.banned) {
+      return res.status(403).json({ message: "Your account has been banned." });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { username: user.username, role: user.role_id },
+      { username: user.username, role: user.role_id, banned: user.banned },
       "your_jwt_secret",
       { expiresIn: "1h" }
     );
 
-    res.json({ token, role: user.role_id });
+    res.json({ token, role: user.role_id, banned: user.banned }); // Include banned in response
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).send("Server error");
   }
 });
+
 
 // Fungsi untuk verifikasi token Google
 async function verifyGoogleToken(token) {
@@ -240,27 +246,29 @@ app.get('/movies/:id', async (req, res) => {
 
 app.get('/api/search', async (req, res) => {
   const searchTerm = req.query.term || ''; // Get the 'term' parameter from the query
-
+  // Define a list of stop words to ignore in the search
   const stopWords = [
     'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
     'at', 'by', 'on', 'with', 'b', 'c', 'd', 'e', 'f', 'g',
     'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
     's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'th', 'wi'
   ];
-
+  // Filter out stop words from the search term
   const filteredTerm = searchTerm
     .toLowerCase()
     .split(' ')
     .filter(word => !stopWords.includes(word) && word.trim() !== '')
     .join(' ');
-
+  // Check if the filtered term is empty
   if (!filteredTerm) {
-    return res.json([]); 
+    return res.json([]); // Return an empty array if no valid search term remains
   }
+  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; // Match the beginning of a word
+  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; // Format for SQL LIKE with trailing wildcard only
 
-  const formattedSearchTermWithWordBoundary = `\\m${filteredTerm}`; 
-  const formattedSearchTermWithoutLeadingWildcard = `${filteredTerm}%`; 
   try {
+    // Query untuk mencari berdasarkan judul dan aktor
+    // SQL query to search based on title and actor's name using regex for precise title matching
     const query = `
       SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id,
         (SELECT string_agg(g.name, ', ') 
@@ -274,10 +282,9 @@ app.get('/api/search', async (req, res) => {
          FROM movie_actor ma
          JOIN actors a ON a.id = ma.actor_id 
          WHERE ma.movie_id = m.id) AS actors
-      FROM movies m
+         FROM movies m
       LEFT JOIN movie_actor ma ON ma.movie_id = m.id
-      LEFT JOIN actors a ON a.id = ma.actor_id
-      WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
+      LEFT JOIN actors a ON a.id = ma.actor_id WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
         OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE $2
       GROUP BY m.id
       ORDER BY m.id ASC;
@@ -291,7 +298,6 @@ app.get('/api/search', async (req, res) => {
     res.status(500).json({ message: 'Error fetching search results' });
   }
 });
-
 
 app.get('/suggestions', async (req, res) => {
   const searchTerm = req.query.term || '';
@@ -493,27 +499,36 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.put('/api/users/:username/banned', async (req, res) => {
-  const { username } = req.params; // Get the username from the URL parameters
-  const { banned } = req.body; // Get the banned status from the request body
-
-  console.log('Banned status:', banned); // Log the banned status
-
+// Ban a user
+app.put('/api/users/:username/ban', async (req, res) => {
+  const { username } = req.params;
   try {
-    // Update the user's banned status in the database
-    const user = await User.findOne({ where: { username } });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Update the banned status
-    user.banned = banned; // Assuming banned is a boolean field
-    await user.save(); // Save the updated user back to the database
-
-    res.status(200).json({ message: `User ${username} banned status updated successfully` });
+      const result = await pool.query('UPDATE users SET banned = true WHERE username = $1 RETURNING *', [username]);
+      if (result.rowCount > 0) {
+          res.status(200).json({ message: 'User banned successfully' });
+      } else {
+          res.status(404).json({ message: 'User not found' });
+      }
   } catch (error) {
-    console.error('Error banning user:', error);
-    res.status(500).json({ message: 'Internal server error' });
+      console.error('Error banning user:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// change user role
+app.put('/api/users/:username/role', async (req, res) => {
+  const { username } = req.params;
+  const { role } = req.body;
+  try {
+      const result = await pool.query('UPDATE users SET role_id = $1 WHERE username = $2 RETURNING *', [role, username]);
+      if (result.rowCount > 0) {
+          res.status(200).json({ message: 'User role updated successfully' });
+      } else {  
+          res.status(404).json({ message: 'User not found' });
+      }
+  } catch (error) {
+      console.error('Error updating user role:', error);
+      res.status(500).json({ message: 'Internal server error' });
   }
 });
 
