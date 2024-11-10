@@ -87,12 +87,12 @@ export default function Login() {
         window.location.href = "/";
       }
     } catch (error) {
-      setError("Google login failed. Please try again.");
+      setError("Your account has been banned");
     }
   };
 
   const handleGoogleLoginError = () => {
-    setError("Google login failed. Please try again.");
+    setError("Account is banned and cannot login");
   };
 
   return (

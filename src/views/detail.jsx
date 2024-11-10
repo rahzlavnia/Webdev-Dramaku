@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import CommentList from '../components/comment'
+import { useNavigate } from 'react-router-dom';
+
+
 
 const MovieDetail = () => {
   const { id } = useParams();
@@ -13,6 +16,10 @@ const MovieDetail = () => {
   const [filterRating, setFilterRating] = useState(0);
   const [username, setUsername] = useState('');
   const [genreColors, setGenreColors] = useState({});
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  // const [loggedInUsername, setLoggedInUsername] = useState('');
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -29,6 +36,7 @@ const MovieDetail = () => {
 
     fetchGenres();
   }, []);
+
 
   const generateGenreColors = (genres) => {
     const colors = {};
@@ -50,10 +58,32 @@ const MovieDetail = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const storedUsername = localStorage.getItem('username');
-    setIsLoggedIn(!!token);
-    setUsername(storedUsername || "Unknown User");
+    if (token) {
+      const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
+      setUsername(decodedToken.username); // Ambil username dari JWT
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const checkWatchlist = async () => {
+      if (isLoggedIn && username) {
+        try {
+          const response = await fetch(`http://localhost:3005/api/watchlist/${username}`);
+          const watchlist = await response.json();
+          setIsInWatchlist(watchlist.some(item => item.id === movie.id));
+        } catch (error) {
+          console.error('Error checking watchlist:', error);
+        }
+      }
+    };
+  
+    if (movie) {
+      checkWatchlist();
+    }
+  }, [movie, isLoggedIn, username]);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -115,6 +145,39 @@ const MovieDetail = () => {
     }
   };
 
+  const handleAddToWatchlist = async (movieId) => {
+    if (!isLoggedIn) {
+      return navigate('/login');
+    }
+  
+    if (!username) {
+      alert('Username is not defined.');
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:3005/api/watchlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: username, movieId: movieId }),
+      });
+  
+      if (response.ok) {
+        setIsInWatchlist(true); // Update the state after adding to watchlist
+        alert('Movie added to your watchlist.');
+      } else {
+        alert('Failed to add movie to watchlist.');
+      }
+    } catch (error) {
+      console.error('Error adding movie to watchlist:', error);
+      alert('Failed to add movie to watchlist.');
+    }
+  };
+
+
+
   const filteredComments = filterRating
     ? movie.comments.filter(comment => comment.rating === filterRating)
     : movie.comments;
@@ -125,12 +188,18 @@ const MovieDetail = () => {
         {movie ? (
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-none w-full md:w-1/5">
-              <img
+            <img
                 src={movie.images || 'https://via.placeholder.com/200x300?text=No+Image+Available'}
                 alt={`${movie.title || 'Movie'} Poster`}
                 className="w-full h-72 rounded shadow-lg mb-4"
-              />
-            </div>
+            />
+            <button
+            onClick={() => handleAddToWatchlist(movie.id)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded shadow"
+          >
+            {isInWatchlist ? 'In Your Watchlist' : '+ Add to My Watchlist'}
+          </button>
+        </div>
             <div className="flex-grow">
               <h1 className="text-3xl text-gray-200 font-bold mb-2">{movie.title || 'Title Not Available'}</h1>
               <p className="text-sm text-gray-200 mb-2">
@@ -160,20 +229,23 @@ const MovieDetail = () => {
 
               {/* Genres */}
               <div className="flex flex-wrap gap-2 mb-3">
-                {movie.genres && movie.genres.length > 0 ? (
-                  movie.genres.split(',').map((genre, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 rounded-full text-sm font-medium text-black"
-                      style={{ backgroundColor: genreColors[genre.trim().toLowerCase()] || '#9ca3af' }}
-                    >
-                      {genre.trim()}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-200">No genres available</span>
-                )}
+              {movie.genres && Array.isArray(movie.genres) && movie.genres.length > 0 ? (
+                movie.genres.map((genre, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 rounded-full text-sm font-medium text-black"
+                    style={{
+                      backgroundColor: genreColors[genre.trim().toLowerCase()] || '#9ca3af',
+                    }}
+                  >
+                    {genre.trim()}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-gray-200">No genres available</span>
+              )}
               </div>
+
 
               <div className="flex items-center mb-2">
                 <svg className="w-5 h-5 text-yellow-400 mr-1" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
@@ -211,15 +283,15 @@ const MovieDetail = () => {
                       }}
                     />
                     <p className="text-gray-200 whitespace-normal break-words text-center max-w-[70px] text-xs">
-                      {actor.name.split(' ').length > 3
-                        ? actor.name.split(' ').map((word, i) => (
+                    {actor.name && typeof actor.name === 'string' && actor.name.split(' ').length > 3
+                      ? actor.name.split(' ').map((word, i) => (
                           <span key={i}>
                             {word}
                             <br />
                           </span>
                         ))
-                        : actor.name}
-                    </p>
+                      : actor.name || "No name available"}
+                  </p>
                   </div>
                 ))
             ) : (

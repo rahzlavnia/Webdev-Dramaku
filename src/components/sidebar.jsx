@@ -19,6 +19,15 @@ const Sidebar = () => {
         navigate('/'); // Navigate to home page when logo is clicked
     };
 
+    const handleLogout = () => {
+        const confirmLogout = window.confirm('Are you sure you want to log out?');
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        setIsAuthenticated(false);
+        setUsername(''); // Reset username
+        navigate('/login');
+      };
+
     return (
         <aside className="w-64 bg-gray-800 p-4 h-screen fixed pt-4">
             <div className="text-xl font-bold flex items-center" onClick={handleLogoClick}>

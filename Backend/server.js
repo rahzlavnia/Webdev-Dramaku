@@ -106,15 +106,22 @@ app.post("/google-login", async (req, res) => {
 
     let user = await pool.query("SELECT * FROM users WHERE google_id = $1", [googleUser.sub]);
 
+    // Jika pengguna tidak ada dalam database, buat akun baru
     if (user.rows.length === 0) {
       await pool.query(
-        "INSERT INTO users (username, email, google_id, role_id) VALUES ($1, $2, $3, 'Writer')",
+        "INSERT INTO users (username, email, google_id, role_id, banned) VALUES ($1, $2, $3, 'Writer', FALSE)",
         [googleUser.name, googleUser.email, googleUser.sub]
       );
 
       user = await pool.query("SELECT * FROM users WHERE google_id = $1", [googleUser.sub]);
     }
 
+    // Cek apakah pengguna dibanned
+    if (user.rows[0].banned) {
+      return res.status(403).json({ message: "Account is banned and cannot login." });
+    }
+
+    // Jika tidak dibanned, buat token JWT
     const jwtToken = jwt.sign(
       { username: user.rows[0].username, role: user.rows[0].role_id },
       "your_jwt_secret",
@@ -127,6 +134,7 @@ app.post("/google-login", async (req, res) => {
     res.status(500).send("Server error during Google login");
   }
 });
+
 
 // Endpoint untuk registrasi
 app.post("/register", async (req, res) => {
@@ -859,6 +867,79 @@ app.post('/api/movies', upload.single('photo'), async (req, res) => {
   }
 });
 
+app.post('/api/watchlist', async (req, res) => {
+  const { username, movieId } = req.body;  // Ambil `username` sesuai data yang dikirimkan dari frontend
+  
+  try {
+      // Cek apakah movie sudah ada di watchlist user berdasarkan `username`
+      const existingEntry = await pool.query(
+          'SELECT * FROM user_watchlist WHERE username = $1 AND movie_id = $2',
+          [username, movieId]
+      );
+      
+      if (existingEntry.rows.length > 0) {
+          return res.status(400).json({ message: 'Movie already in watchlist' });
+      }
+
+      // Insert movie ke watchlist user
+      await pool.query(
+          'INSERT INTO user_watchlist (username, movie_id) VALUES ($1, $2)',
+          [username, movieId]
+      );
+      
+      res.status(201).json({ message: 'Movie added to watchlist' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/watchlist/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT m.id, m.title, m.year, m.images, 
+              COALESCE(AVG(c.rate), 0) AS rating 
+       FROM movies m
+       JOIN user_watchlist uw ON m.id = uw.movie_id
+       LEFT JOIN comments c ON m.id = c.movie_id
+       WHERE uw.username = $1
+       GROUP BY m.id`,
+      [username]
+    );
+    
+    if (result.rows.length > 0) {
+      res.status(200).json(result.rows);
+    } else {
+      res.status(404).json({ message: 'No movies in watchlist' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+app.delete('/api/watchlist/:username/:movieId', async (req, res) => {
+  const { username, movieId } = req.params;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM user_watchlist WHERE username = $1 AND movie_id = $2',
+      [username, movieId]
+    );
+
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Movie removed from watchlist' });
+    } else {
+      res.status(404).json({ message: 'Movie not found in watchlist' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
