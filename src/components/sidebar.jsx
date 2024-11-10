@@ -7,7 +7,8 @@ const Sidebar = () => {
     const location = useLocation(); // Get the current route location
     const navigate = useNavigate();  // Use useNavigate for navigation
     const [showDramaSubMenu, setShowDramaSubMenu] = useState(false);
-
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [username, setUsername] = useState('');
     const toggleSubMenu = () => {
         setShowDramaSubMenu(!showDramaSubMenu);
     };
@@ -26,6 +27,15 @@ const Sidebar = () => {
     const handleLogoClick = () => {
         navigate('/'); // Navigate to home page when logo is clicked
     };
+
+    const handleLogout = () => {
+        const confirmLogout = window.confirm('Are you sure you want to log out?');
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        setIsAuthenticated(false);
+        setUsername(''); // Reset username
+        navigate('/login');
+      };
 
     return (
         <aside className="w-64 bg-gray-800 p-4 h-screen fixed pt-4">
@@ -83,7 +93,7 @@ const Sidebar = () => {
                 </li>
                 <li
                     className="py-2 pl-4 text-gray-100 font-bold cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700"
-                    onClick={() => alert('Logging out...')} // Placeholder for logout logic
+                    onClick={handleLogout} // Call handleLogout on click
                 >
                     Logout
                 </li>

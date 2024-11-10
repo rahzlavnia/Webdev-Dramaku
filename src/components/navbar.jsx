@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { Link } from 'react-router-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
+
 
 const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -559,56 +561,68 @@ const Navbar = () => {
 
         {/* Watchlist and Profile with Dropdown */}
         <div className="flex items-center">
-          <a
-            href="/watchlist"
+
+          {/* <a
             className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2"
           >
-            <i className="fas fa-bookmark mr-2"></i> Watchlist
-          </a>
+            <Link to={`/watchlist/${username}`}>
+              <i className="fas fa-bookmark mr-2"></i> Watchlist
+            </Link>
+          </a> */}
 
-          {!isAuthenticated ? (
-            <a
-              href="/login"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full"
-            >
-              Login
-            </a>
-          ) : (
-            <div className="relative">
-              <div
-                id="profileButton"
-                onClick={toggleProfileDropdown}
-                className="bg-blue-300 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer"
-              >
-                {username ? username.charAt(0).toUpperCase() : ''}
-              </div>
-              {isProfileDropdownVisible && (
-                <div
-                  id="profileDropdown"
-                  className="absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg z-10"
-                  style={{ top: '100%', right: '0' }}
-                >
-                  {/* Conditionally render based on role */}
-                  {userRole === 'Admin' && (
-                    <button
-                      onClick={() => handleNavigation('/users')}
-                      className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
-                    >
-                      CMSAdmin
-                    </button>
-                  )}
+          
+<a
+  href={isAuthenticated ? `/watchlist/${username}` : "/login"}
+  className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-full flex items-center mr-2"
+>
+  <i className="fas fa-bookmark mr-2"></i> Watchlist
+</a>
 
-                  {/* Logout option */}
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+{!isAuthenticated ? (
+  <a
+    href="/login"
+    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full"
+  >
+    Login
+  </a>
+) : (
+  <div className="relative">
+    <div
+      id="profileButton"
+      onClick={toggleProfileDropdown}
+      className="bg-blue-300 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm cursor-pointer"
+    >
+      {username ? username.charAt(0).toUpperCase() : ''}
+    </div>
+    {isProfileDropdownVisible && (
+      <div
+        id="profileDropdown"
+        className="absolute right-0 mt-2 bg-gray-700 rounded-lg shadow-lg z-10"
+        style={{ top: '100%', right: '0' }}
+      >
+        {/* Conditionally render based on role */}
+        {userRole === 'Admin' && (
+          <button
+            onClick={() => handleNavigation('/users')}
+            className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
+          >
+            CMSAdmin
+          </button>
+        )}
+
+        {/* Logout option */}
+        <button
+          onClick={handleLogout}
+          className="block w-full px-4 py-2 text-white hover:bg-gray-800 text-left"
+        >
+          Logout
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
+
         </div>
 
     </nav>
