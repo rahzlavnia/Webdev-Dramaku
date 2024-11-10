@@ -61,10 +61,10 @@ const Watchlist = () => {
     };
 
     return (
-        <div className="bg-gray-800 min-h-screen text-white p-6">
+        <div className="bg-gray-900 min-h-screen text-white p-6">
             <h1 className="text-3xl font-semibold mb-6">Your Watchlist</h1>
             {watchlist.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
                     {watchlist.map((movie) => (
                         <div key={movie.id} className="relative">
                             <CardMovie
@@ -72,7 +72,7 @@ const Watchlist = () => {
                                 title={movie.title}
                                 year={movie.year}
                                 genre={movie.genre}
-                                rating={movie.rating ? Number(movie.rating).toFixed(1) || '0.0' : 'N/A'}
+                                rating={movie.rating && Number(movie.rating) > 0 ? Number(movie.rating).toFixed(1) : 'N/A'}
                                 onClick={() => navigate(`/movies/${movie.id}`)}
                             />
                             <button

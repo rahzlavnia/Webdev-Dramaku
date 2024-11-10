@@ -221,7 +221,7 @@ app.get('/movies/:id', async (req, res) => {
             WHERE c.movie_id = m.id AND c.status = '1') as rating,
           (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
             FROM comments c 
-            WHERE c.movie_id = m.id AND c.status = '1') as comments,
+            WHERE c.movie_id = m.id AND c.status = 'true') as comments,
             (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
              FROM movie_actor ma
              JOIN actors a ON a.id = ma.actor_id 
@@ -282,7 +282,7 @@ app.get('/api/search', async (req, res) => {
         (SELECT string_agg(g.name, ', ') 
          FROM movie_genre mg
          JOIN genres g ON g.id = mg.genre_id
-         WHERE mg.movie_id = m.id) AS genre,
+        //  WHERE mg.movie_id = m.id) AS genre,
         (SELECT AVG(c.rate)
          FROM comments c 
          WHERE c.movie_id = m.id AND c.status = '1') AS rating,
@@ -361,26 +361,36 @@ app.get('/api/genres', async (req, res) => {
 // Endpoint untuk menambahkan komentar
 app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   const movieId = parseInt(req.params.id);
-  const { commentText, rating, status } = req.body; // Ambil status dari request body
+  const { commentText, rating, status } = req.body; // Ambil data dari request body
   const userName = req.user.username; // Ambil username dari token yang terautentikasi
+
+  // Log the received data to the terminal
+  console.log("Received comment data:", {
+    movieId,
+    userName,
+    commentText,
+    rating,
+    status
+  });
 
   if (!commentText || !rating) {
     return res.status(400).json({ message: "Comment text and rating are required." });
   }
 
   try {
-    // Insert komentar ke database
+    // Insert comment into the database with the current timestamp
     await pool.query(
-      "INSERT INTO comments (movie_id, username, comment, rate, status) VALUES ($1, $2, $3, $4, $5)", // Ubah query untuk menggunakan $5 untuk status
-      [movieId, userName, commentText, rating, status] // Tambahkan status di akhir array
+      "INSERT INTO comments (movie_id, username, comment, rate, status, created_at) VALUES ($1, $2, $3, $4, false, CURRENT_TIMESTAMP)",
+      [movieId, userName, commentText, rating, false]
     );
-
+  
     res.status(201).json({ message: "Comment added successfully." });
   } catch (error) {
     console.error("Error adding comment:", error);
     res.status(500).json({ message: "Server error while adding comment." });
-  }
+  }  
 });
+
 
 
 // Route to get all countries in descending order by id
@@ -823,7 +833,7 @@ app.post('/api/movies', upload.single('photo'), async (req, res) => {
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;
   `;
     const values = [title, alt_title, availability, synopsis, trailer, year, images, 'Unapproved', country_id];
-  
+
     // Execute the query
     const result = await pool.query(query, values);
 
@@ -869,28 +879,28 @@ app.post('/api/movies', upload.single('photo'), async (req, res) => {
 
 app.post('/api/watchlist', async (req, res) => {
   const { username, movieId } = req.body;  // Ambil `username` sesuai data yang dikirimkan dari frontend
-  
-  try {
-      // Cek apakah movie sudah ada di watchlist user berdasarkan `username`
-      const existingEntry = await pool.query(
-          'SELECT * FROM user_watchlist WHERE username = $1 AND movie_id = $2',
-          [username, movieId]
-      );
-      
-      if (existingEntry.rows.length > 0) {
-          return res.status(400).json({ message: 'Movie already in watchlist' });
-      }
 
-      // Insert movie ke watchlist user
-      await pool.query(
-          'INSERT INTO user_watchlist (username, movie_id) VALUES ($1, $2)',
-          [username, movieId]
-      );
-      
-      res.status(201).json({ message: 'Movie added to watchlist' });
+  try {
+    // Cek apakah movie sudah ada di watchlist user berdasarkan `username`
+    const existingEntry = await pool.query(
+      'SELECT * FROM user_watchlist WHERE username = $1 AND movie_id = $2',
+      [username, movieId]
+    );
+
+    if (existingEntry.rows.length > 0) {
+      return res.status(400).json({ message: 'Movie already in watchlist' });
+    }
+
+    // Insert movie ke watchlist user
+    await pool.query(
+      'INSERT INTO user_watchlist (username, movie_id) VALUES ($1, $2)',
+      [username, movieId]
+    );
+
+    res.status(201).json({ message: 'Movie added to watchlist' });
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -899,15 +909,17 @@ app.get('/api/watchlist/:username', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT m.id, m.title, m.year, m.images, 
-              COALESCE(AVG(c.rate), 0) AS rating 
+              COALESCE(AVG(c.rate), 0) AS rating,
+              MAX(uw.added_at) AS added_at 
        FROM movies m
        JOIN user_watchlist uw ON m.id = uw.movie_id
        LEFT JOIN comments c ON m.id = c.movie_id
        WHERE uw.username = $1
-       GROUP BY m.id`,
+       GROUP BY m.id
+       ORDER BY added_at DESC`, // Ensure ordering by the watchlist added_at column
       [username]
     );
-    
+
     if (result.rows.length > 0) {
       res.status(200).json(result.rows);
     } else {
@@ -918,7 +930,6 @@ app.get('/api/watchlist/:username', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 
 app.delete('/api/watchlist/:username/:movieId', async (req, res) => {

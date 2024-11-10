@@ -15,7 +15,7 @@ const CmsActors = () => {
   const [editId, setEditId] = useState(null);
   const [previewImage, setPreviewImage] = useState(''); // State for image preview
   // const [sortConfig, setSortConfig] = useState({ key: null, order: 'asc' });
-  // const [sortedActors, setSortedActors] = useState(actorsData);
+  const [sortedActors, setSortedActors] = useState(actorsData);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 

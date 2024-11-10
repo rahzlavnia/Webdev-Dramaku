@@ -27,6 +27,31 @@ const DramaInput = () => {
         image: null,
     });
 
+    const availablePlatforms = [
+        'Amazon Prime Video', 'Apple TV', 'Crunchyroll', 'Disney+',
+        'Google Play Movies', 'Netflix', 'Prime Video', 'YouTube'
+    ];
+
+    const handleAvailabilityChange = (platform) => {
+        setMovie((prevMovie) => {
+          const updatedAvailability = prevMovie.availability.split(',').map(item => item.trim());
+    
+          if (updatedAvailability.includes(platform)) {
+            updatedAvailability.splice(updatedAvailability.indexOf(platform), 1); // Remove the platform
+          } else {
+            updatedAvailability.push(platform); // Add the platform
+          }
+    
+          // Join the updated list of platforms into a single string without leading/trailing commas
+          const formattedAvailability = updatedAvailability.filter(Boolean).join(', ');
+    
+          return {
+            ...prevMovie,
+            availability: formattedAvailability  // Update the availability field without leading commas
+          };
+        });
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -34,7 +59,7 @@ const DramaInput = () => {
         formData.append('title', movie.title);
         formData.append('alt_title', movie.altTitle);
         formData.append('year', movie.year);
-        formData.append('availability', movie.availability);
+        formData.append('availability', movie.availability); // Send the comma-separated availability
         formData.append('synopsis', movie.synopsis);
         formData.append('trailer', movie.trailer);
         formData.append('country_id', movie.country_id);
@@ -89,6 +114,7 @@ const DramaInput = () => {
             console.error('Error posting movie:', error);
         }
     };
+
 
 
     const fetchGenres = async () => {
@@ -337,14 +363,27 @@ const DramaInput = () => {
                                     </option>
                                 ))}
                             </select>
-                            <input
-                                type="text"
-                                name='availability'
-                                placeholder="Availability"
-                                className="bg-gray-100 p-2 rounded-md w-full text-black col-span-3"
-                                value={movie.availability}
-                                onChange={handleOnChange}
-                            />
+                        </div>
+
+                        {/* Availability */}
+                        <div className="col-span-4">
+                            <div className="p-4 border border-gray-100 rounded-xl">
+                                <h3 className="font-bold mb-2 text-center">Select Availability</h3>
+                                <div className="max-h-48 overflow-y-auto grid grid-cols-4 gap-4 p-2">
+                                    {availablePlatforms.map((platform) => (
+                                        <label key={platform} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                value={platform}
+                                                checked={movie.availability.split(',').map(item => item.trim()).includes(platform)}
+                                                onChange={() => handleAvailabilityChange(platform)}
+                                                className="form-checkbox h-6 w-6"
+                                            />
+                                            <span>{platform}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Synopsis */}
