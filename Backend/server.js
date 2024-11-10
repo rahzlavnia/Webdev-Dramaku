@@ -29,8 +29,8 @@ const upload = multer({ storage: multer.memoryStorage() }); // Using memory stor
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'postgres',
-  password: 'Aziiz_4321',
+  database: 'Dramaku',
+  password: 'newpassword',
   port: 5432,
 });
 
@@ -378,11 +378,11 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
 // Route to get all countries in descending order by id
 app.get('/api/countries', async (req, res) => {
   try {
-      const result = await pool.query('SELECT * FROM countries ORDER BY id DESC');
-      res.json(result.rows);
+    const result = await pool.query('SELECT * FROM countries ORDER BY id DESC');
+    res.json(result.rows);
   } catch (error) {
-      console.error('Error fetching countries:', error);
-      res.status(500).json({ error: 'Failed to fetch countries' });
+    console.error('Error fetching countries:', error);
+    res.status(500).json({ error: 'Failed to fetch countries' });
   }
 });
 
@@ -390,11 +390,11 @@ app.get('/api/countries', async (req, res) => {
 app.post('/api/countries', async (req, res) => {
   const { name } = req.body;
   try {
-      const result = await pool.query('INSERT INTO countries (name) VALUES ($1) RETURNING *', [name]);
-      res.status(201).json(result.rows[0]); // Return the newly created country
+    const result = await pool.query('INSERT INTO countries (name) VALUES ($1) RETURNING *', [name]);
+    res.status(201).json(result.rows[0]); // Return the newly created country
   } catch (error) {
-      console.error('Error adding country:', error);
-      res.status(500).json({ error: 'Failed to add country' });
+    console.error('Error adding country:', error);
+    res.status(500).json({ error: 'Failed to add country' });
   }
 });
 
@@ -402,20 +402,20 @@ app.delete('/api/countries/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-      await pool.query('UPDATE actors SET country_id = NULL WHERE country_id = $1', [id]);
-      await pool.query('UPDATE movies SET country_id = NULL WHERE country_id = $1', [id]);
-      await pool.query('UPDATE awards SET country_id = NULL WHERE country_id = $1', [id]);
+    await pool.query('UPDATE actors SET country_id = NULL WHERE country_id = $1', [id]);
+    await pool.query('UPDATE movies SET country_id = NULL WHERE country_id = $1', [id]);
+    await pool.query('UPDATE awards SET country_id = NULL WHERE country_id = $1', [id]);
 
-      const result = await pool.query('DELETE FROM countries WHERE id = $1 RETURNING *', [id]);
-      
-      if (result.rowCount > 0) {
-          res.status(200).json({ message: 'Country deleted successfully' });
-      } else {
-          res.status(404).json({ message: 'Country not found' });
-      }
+    const result = await pool.query('DELETE FROM countries WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Country deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Country not found' });
+    }
   } catch (error) {
-      console.error('Error deleting country:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error deleting country:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -426,16 +426,16 @@ app.put('/api/countries/:id', async (req, res) => {
   const { name } = req.body; // New country name
 
   try {
-      const result = await pool.query('UPDATE countries SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
-      
-      if (result.rowCount > 0) {
-          res.status(200).json(result.rows[0]); // Return the updated country
-      } else {
-          res.status(404).json({ message: 'Country not found' });
-      }
+    const result = await pool.query('UPDATE countries SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+
+    if (result.rowCount > 0) {
+      res.status(200).json(result.rows[0]); // Return the updated country
+    } else {
+      res.status(404).json({ message: 'Country not found' });
+    }
   } catch (error) {
-      console.error('Error updating country:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error updating country:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -443,11 +443,11 @@ app.put('/api/countries/:id', async (req, res) => {
 app.post('/api/genres', async (req, res) => {
   const { name } = req.body;
   try {
-      const result = await pool.query('INSERT INTO genres (name) VALUES ($1) RETURNING *', [name]);
-      res.status(201).json(result.rows[0]);
+    const result = await pool.query('INSERT INTO genres (name) VALUES ($1) RETURNING *', [name]);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
-      console.error('Error adding genre:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error adding genre:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -456,15 +456,15 @@ app.put('/api/genres/:id', async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
   try {
-      const result = await pool.query('UPDATE genres SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
-      if (result.rowCount > 0) {
-          res.status(200).json(result.rows[0]);
-      } else {
-          res.status(404).json({ message: 'Genre not found' });
-      }
+    const result = await pool.query('UPDATE genres SET name = $1 WHERE id = $2 RETURNING *', [name, id]);
+    if (result.rowCount > 0) {
+      res.status(200).json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: 'Genre not found' });
+    }
   } catch (error) {
-      console.error('Error updating genre:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error updating genre:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -473,29 +473,29 @@ app.delete('/api/genres/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-      await pool.query('DELETE FROM movie_genre WHERE genre_id = $1', [id]);
-      
-      const result = await pool.query('DELETE FROM genres WHERE id = $1 RETURNING *', [id]);
-      
-      if (result.rowCount > 0) {
-          res.status(200).json({ message: 'Genre and related movie associations deleted successfully' });
-      } else {
-          res.status(404).json({ message: 'Genre not found' });
-      }
+    await pool.query('DELETE FROM movie_genre WHERE genre_id = $1', [id]);
+
+    const result = await pool.query('DELETE FROM genres WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'Genre and related movie associations deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Genre not found' });
+    }
   } catch (error) {
-      console.error('Error deleting Genre:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error deleting Genre:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 // Get all users
 app.get('/api/users', async (req, res) => {
   try {
-      const result = await pool.query('SELECT * FROM users WHERE banned = false ORDER BY username ASC');
-      res.json(result.rows);
+    const result = await pool.query('SELECT * FROM users WHERE banned = false ORDER BY username ASC');
+    res.json(result.rows);
   } catch (error) {
-      console.error('Error fetching countries:', error);
-      res.status(500).json({ error: 'Failed to fetch users' });
+    console.error('Error fetching countries:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
@@ -503,15 +503,15 @@ app.get('/api/users', async (req, res) => {
 app.put('/api/users/:username/ban', async (req, res) => {
   const { username } = req.params;
   try {
-      const result = await pool.query('UPDATE users SET banned = true WHERE username = $1 RETURNING *', [username]);
-      if (result.rowCount > 0) {
-          res.status(200).json({ message: 'User banned successfully' });
-      } else {
-          res.status(404).json({ message: 'User not found' });
-      }
+    const result = await pool.query('UPDATE users SET banned = true WHERE username = $1 RETURNING *', [username]);
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'User banned successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
   } catch (error) {
-      console.error('Error banning user:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error banning user:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -520,15 +520,15 @@ app.put('/api/users/:username/role', async (req, res) => {
   const { username } = req.params;
   const { role } = req.body;
   try {
-      const result = await pool.query('UPDATE users SET role_id = $1 WHERE username = $2 RETURNING *', [role, username]);
-      if (result.rowCount > 0) {
-          res.status(200).json({ message: 'User role updated successfully' });
-      } else {  
-          res.status(404).json({ message: 'User not found' });
-      }
+    const result = await pool.query('UPDATE users SET role_id = $1 WHERE username = $2 RETURNING *', [role, username]);
+    if (result.rowCount > 0) {
+      res.status(200).json({ message: 'User role updated successfully' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
   } catch (error) {
-      console.error('Error updating user role:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -787,19 +787,70 @@ app.delete("/comments", async (req, res) => {
 });
 
 // Add a new movie
-app.post('/api/movies', async (req, res) => {
-  const { title, alt_title, year, availability, synopsis, trailer } = req.body;
+app.post('/api/movies', upload.single('photo'), async (req, res) => {
+  const { title, alt_title, year, availability, synopsis, trailer, country_id, genres, awards, actors } = req.body;
 
   try {
+    let images = null;
+
+    if (req.file) {
+      images = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        });
+        uploadStream.end(req.file.buffer);
+      });
+    } else {
+      console.log("No file uploaded");
+    }
+
+    // Print movie data
+    console.log("Received data:", req.body);
+
     const query = `
-      INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
-    `;
-    const values = [title, alt_title, availability, synopsis, trailer, year];
-    
+    INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year, images, status, country_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;
+  `;
+    const values = [title, alt_title, availability, synopsis, trailer, year, images, 'Unapproved', country_id];
+  
     // Execute the query
     const result = await pool.query(query, values);
-    
+
+    const movieId = result.rows[0].id;
+
+    if (genres && genres.length > 0) {
+      const genreQueries = genres.map((genreId) => {
+        return pool.query(
+          'INSERT INTO movie_genre (movie_id, genre_id) VALUES ($1, $2)',
+          [movieId, genreId]
+        );
+      });
+      await Promise.all(genreQueries);
+    }
+
+    if (awards && awards.length > 0) {
+      const awardQueries = awards.map((awardId) => {
+        return pool.query(
+          'INSERT INTO movie_award (movie_id, award_id) VALUES ($1, $2)',
+          [movieId, awardId]
+        );
+      });
+      await Promise.all(awardQueries);
+    }
+
+    if (actors && actors.length > 0) {
+      const actorQueries = actors.map((actorId) => {
+        return pool.query(
+          'INSERT INTO movie_actor (movie_id, actor_id) VALUES ($1, $2)',
+          [movieId, actorId]
+        );
+      });
+      await Promise.all(actorQueries);
+    }
+
     // Return the inserted movie
     res.json(result.rows[0]);
   } catch (error) {
@@ -807,7 +858,6 @@ app.post('/api/movies', async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
 
 
 app.listen(port, () => {

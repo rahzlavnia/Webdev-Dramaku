@@ -1,26 +1,18 @@
 // src/components/Sidebar.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom'; // Use useNavigate instead of useHistory
 import logo from '../assets/logo.png';
 
 const Sidebar = () => {
     const location = useLocation(); // Get the current route location
     const navigate = useNavigate();  // Use useNavigate for navigation
-    const [showDramaSubMenu, setShowDramaSubMenu] = useState(false);
-
-    const toggleSubMenu = () => {
-        setShowDramaSubMenu(!showDramaSubMenu);
-    };
-
+    
     // Define an activeClass function
     const activeClass = (path) => location.pathname === path ? 'bg-gray-400' : '';
 
     // Function to handle navigation when clicking on list items
     const handleNavigation = (path) => {
         navigate(path);
-        if (path.includes('/drama')) {
-            setShowDramaSubMenu(true); // Keep the submenu open for drama pages
-        }
     };
 
     const handleLogoClick = () => {
@@ -34,13 +26,13 @@ const Sidebar = () => {
             </div>
             <ul className="space-y-2 mt-5">
                 <li
-                    className={`py-2 pl-4 text-gray-100 font-medium cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700 ${activeClass('/dramaInput')}`}
+                    className={`py-2 pl-4 text-gray-100 font-bold cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700 ${activeClass('/dramaInput')}`}
                     onClick={() => handleNavigation('/dramaInput')}
                 >
                     Input  Drama
                 </li>
                 <li
-                    className={`py-2 pl-4 text-gray-100 font-medium cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700 ${activeClass('/drama')}`}
+                    className={`py-2 pl-4 text-gray-100 font-bold cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700 ${activeClass('/drama')}`}
                     onClick={() => handleNavigation('/drama')}
                 >
                     Validate
@@ -80,12 +72,6 @@ const Sidebar = () => {
                     onClick={() => handleNavigation('/users')}
                 >
                     Users
-                </li>
-                <li
-                    className="py-2 pl-4 text-gray-100 font-bold cursor-pointer hover:bg-gray-500 rounded-lg active:bg-gray-700"
-                    onClick={() => alert('Logging out...')} // Placeholder for logout logic
-                >
-                    Logout
                 </li>
             </ul>
         </aside>
