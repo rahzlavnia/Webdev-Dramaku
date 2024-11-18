@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import logo from '../assets/logo.png';
 import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 
 const ClientId = "193966095713-ooq3r03aaanmf67tudroa67ccctfqvk6.apps.googleusercontent.com";
 
@@ -10,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false); // eslint-disable-line no-unused-vars
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -18,60 +20,46 @@ export default function Login() {
     }
   }, []);
 
-  // Validate username can either be email or standard username
   const validateInput = (input) => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const usernamePattern = /^[a-zA-Z0-9._-]{3,}$/; // Allows letters, numbers, dots, underscores, min 3 chars
+    const usernamePattern = /^[a-zA-Z0-9._-]{3,}$/;
     return emailPattern.test(input) || usernamePattern.test(input);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-  
-    // Input validation
+
     if (!validateInput(username)) {
       setError("Please enter a valid email or username (at least 3 characters).");
       return;
     }
-  
+
     if (!password || password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
-  
+
     try {
-      const response = await axios.post("http://localhost:3005/login", {
-        username,
-        password,
-      });
-  
-      // Check for banned status in the response
+      const response = await axios.post("http://localhost:3005/login", { username, password });
+
       if (response.data.banned) {
-        setError("Your account has been banned. Please contact support.");
-        localStorage.removeItem("token"); // Remove token if set
-        return; // Prevent further execution
+        setError("Your account has been banned.");
+        localStorage.removeItem("token");
+        return;
       }
-  
+
       localStorage.setItem("token", response.data.token);
       setIsAuthenticated(true);
-  
-      // Redirect based on role
-      if (response.data.role === "Admin") {
-        window.location.href = "/";
-      } else {
-        window.location.href = "/";
-      }
+      window.location.href = "/";
     } catch (error) {
       if (error.response && error.response.status === 403) {
-        setError("Your account has been banned. Please contact support.");
+        setError("Your account has been banned.");
       } else {
-        localStorage.removeItem("token");
         setError("Login failed. Please check your credentials.");
       }
     }
-  };  
-
+  };
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
     try {
@@ -80,19 +68,14 @@ export default function Login() {
 
       localStorage.setItem("token", response.data.token);
       setIsAuthenticated(true);
-
-      if (response.data.role === "Admin") {
-        window.location.href = "/";
-      } else {
-        window.location.href = "/";
-      }
+      window.location.href = "/";
     } catch (error) {
-      setError("Your account has been banned");
+      setError("Your account has been banned.");
     }
   };
 
   const handleGoogleLoginError = () => {
-    setError("Account is banned and cannot login");
+    setError("Account is banned and cannot login.");
   };
 
   return (
@@ -102,13 +85,19 @@ export default function Login() {
           <img src={logo} className="w-40 h-10" alt="Logo" />
 
           <div className="bg-gray-800 p-8 rounded-lg shadow-md w-96">
-            <h1 className="text-white text-2xl text-center font-bold mb-3">
-              Login
-            </h1>
+            <h1 className="text-white text-2xl text-center font-bold mb-3">Login</h1>
 
             {error && <p className="text-red-500 text-center">{error}</p>}
+            {error && (
+              <p
+                className="text-teal-500 text-center cursor-pointer underline"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Forgot Password?
+              </p>
+            )}
 
-            <div className="mb-4">
+            <div className="mb-4 mt-6">
               <input
                 className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                 type="text"

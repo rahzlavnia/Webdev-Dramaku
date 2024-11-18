@@ -10,6 +10,10 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2; // Cloudinary SDK
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+require('dotenv').config(); // to load environment variables
+let otpStore = {}; // Temporary storage for OTPs
 
 // Setup CORS to allow frontend access
 app.use(cors());
@@ -33,6 +37,155 @@ const pool = new Pool({
   password: 'newpassword',
   port: 5432,
 });
+
+
+async function sendEmail(to, subject, htmlContent) {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      html: htmlContent,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent: ' + info.response);
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Email sending failed');
+  }
+}
+
+// Endpoint to send password reset link
+app.post("/api/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  console.log("Forgot password request for email:", email);
+  try {
+    // Check if user exists in the database
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Generate password reset token and expiration
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetPasswordLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}&email=${email}`;
+    const tokenExpiration = new Date(Date.now() + 3600000); // Token valid for 1 hour
+
+    // Store the reset token and expiration in the database
+    await pool.query(
+      "UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3",
+      [resetToken, tokenExpiration, email]
+    );
+
+    // Email content with the reset link
+    const emailContent = `
+      <p>To reset your password, please click the link below:</p>
+      <a href="${resetPasswordLink}">Reset Password</a>
+      <p>If you did not request a password reset, please ignore this email.</p>
+    `;
+
+    // Send the email
+    await sendEmail(email, "Reset Password", emailContent);
+
+    res.status(200).json({ message: "Password reset link has been sent to your email." });
+  } catch (error) {
+    console.error("Error in forgot-password endpoint:", error);
+    res.status(500).json({ message: "An error occurred. Please try again." });
+  }
+});
+
+// Endpoint to reset password
+app.put("/api/reset-password", async (req, res) => {
+  const { newPassword, token } = req.body;
+  //new password print
+  console.log("New Password :", newPassword)
+
+  try {
+    // Verifikasi token dan cari user terkait
+    const userResult = await pool.query("SELECT * FROM users WHERE reset_password_token = $1", [token]);
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token." });
+    }
+
+    // Verifikasi jika token belum kedaluwarsa
+    if (Date.now() > user.reset_password_expires) {
+      return res.status(400).json({ message: "Token has expired." });
+    }
+
+    // Hash password baru
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log("Hashed Password :", hashedPassword)
+
+    console.log("Updating password for user email:", user.email);
+    await pool.query(
+      "UPDATE users SET password = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE email = $2",
+      [hashedPassword, user.email]
+    );
+    res.status(200).json({ message: "Password has been reset successfully." });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ message: "An error occurred. Please try again." });
+  }
+});
+
+// Endpoint untuk mengirim OTP
+app.post("/send-otp", async (req, res) => {
+  const { email } = req.body;
+  const otp = crypto.randomInt(100000, 999999).toString();
+
+  // Simpan OTP dalam memori untuk sementara
+  otpStore[email] = otp;
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your OTP Code",
+    text: `Your OTP code is: ${otp}`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: "OTP sent to email." });
+  } catch (error) {
+    console.error("Error sending OTP:", error);
+    res.status(500).json({ message: "Failed to send OTP." });
+  }
+});
+
+// Endpoint untuk memverifikasi OTP
+app.post("/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+
+  if (otpStore[email] && otpStore[email] === otp) {
+    delete otpStore[email]; // OTP valid, hapus OTP yang telah digunakan
+    res.status(200).json({ message: "OTP verified successfully!" });
+  } else {
+    res.status(400).json({ message: "Invalid OTP." });
+  }
+});
+
 
 const client = new OAuth2Client("193966095713-ooq3r03aaanmf67tudroa67ccctfqvk6.apps.googleusercontent.com");
 
@@ -166,8 +319,8 @@ app.post("/register", async (req, res) => {
 
     // Simpan pengguna baru ke database
     await pool.query(
-      "INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4)",
-      [username, email, hashedPassword, role] // Gunakan role yang ditentukan
+      "INSERT INTO users (username, email, password, role_id, banned) VALUES ($1, $2, $3, $4, COALESCE($5, false))",
+      [username, email, hashedPassword, role, false] // Gunakan role yang ditentukan
     );
 
     res.status(201).json({ message: "User registered successfully", role });
@@ -180,17 +333,29 @@ app.post("/register", async (req, res) => {
 app.get('/movies', async (req, res) => {
   try {
     const query = `
-      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.availability, m.country_id,
-            (SELECT string_agg(g.name, ', ') FROM movie_genre mg 
-              JOIN genres g ON g.id = mg.genre_id WHERE mg.movie_id = m.id) as genre,
-            (SELECT avg(c.rate) FROM comments c WHERE c.movie_id = m.id AND c.status = '1') as rating,
-            0 as views,
-            (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
+      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability, m.country_id, m.status,
+             countries.name AS country_name, 
+          (SELECT string_agg(g.name, ', ') 
+            FROM movie_genre mg 
+            JOIN genres g ON g.id = mg.genre_id 
+            WHERE mg.movie_id = m.id) as genres,
+          (SELECT avg(c.rate) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = '1') as rating,
+          (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = 'true') as comments,
+            (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
+             FROM movie_actor ma
+             JOIN actors a ON a.id = ma.actor_id 
+             WHERE ma.movie_id = m.id) AS actors,
+          (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
             FROM movie_award md 
             JOIN awards w ON w.id = md.award_id 
             WHERE md.movie_id = m.id AND w.year IS NOT NULL) as award
       FROM movies m
-      ORDER BY m.id ASC;
+      LEFT JOIN countries ON m.country_id = countries.id
+      ORDER BY m.id ASC
     `;
     const movies = await pool.query(query);
 
@@ -204,6 +369,45 @@ app.get('/movies', async (req, res) => {
   }
 });
 
+app.get('/home/movies', async (req, res) => {
+  try {
+    const query = `
+      SELECT m.id, m.title, m.year, m.images, m.synopsis, m.trailer, m.alt_title, m.availability, m.country_id, m.status,
+             countries.name AS country_name, 
+          (SELECT string_agg(g.name, ', ') 
+            FROM movie_genre mg 
+            JOIN genres g ON g.id = mg.genre_id 
+            WHERE mg.movie_id = m.id) as genres,
+          (SELECT avg(c.rate) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = '1') as rating,
+          (SELECT json_agg(json_build_object('user', c.username, 'text', c.comment, 'rating', c.rate, 'date', c.created_at)) 
+            FROM comments c 
+            WHERE c.movie_id = m.id AND c.status = 'true') as comments,
+            (SELECT json_agg(json_build_object('name', a.name, 'url_photos', a.url_photos)) 
+             FROM movie_actor ma
+             JOIN actors a ON a.id = ma.actor_id 
+             WHERE ma.movie_id = m.id) AS actors,
+          (SELECT string_agg(w.name || ' (' || w.year || ')', ', ') 
+            FROM movie_award md 
+            JOIN awards w ON w.id = md.award_id 
+            WHERE md.movie_id = m.id AND w.year IS NOT NULL) as award
+      FROM movies m
+      LEFT JOIN countries ON m.country_id = countries.id
+      WHERE m.status = 'Approved'
+      ORDER BY m.id ASC
+    `;
+    const movies = await pool.query(query);
+
+    // Log data to check for duplicates
+    console.log(movies.rows);
+
+    res.json(movies.rows); // Send all movies at once
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching movies' });
+  }
+});
 
 app.get('/movies/:id', async (req, res) => {
   const movieId = parseInt(req.params.id);
@@ -253,8 +457,8 @@ app.get('/movies/:id', async (req, res) => {
 
 
 app.get('/api/search', async (req, res) => {
-  const searchTerm = req.query.term || ''; // Get the 'term' parameter from the query
-  // Define a list of stop words to ignore in the search
+  const searchTerm = req.query.term || ''; 
+
   const stopWords = [
     'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
     'at', 'by', 'on', 'with', 'b', 'c', 'd', 'e', 'f', 'g',
@@ -278,11 +482,11 @@ app.get('/api/search', async (req, res) => {
     // Query untuk mencari berdasarkan judul dan aktor
     // SQL query to search based on title and actor's name using regex for precise title matching
     const query = `
-      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id,
+      SELECT DISTINCT m.id, m.title, m.year, m.images, m.synopsis, m.country_id, m.status,
         (SELECT string_agg(g.name, ', ') 
          FROM movie_genre mg
          JOIN genres g ON g.id = mg.genre_id
-        //  WHERE mg.movie_id = m.id) AS genre,
+         WHERE mg.movie_id = m.id) AS genre,
         (SELECT AVG(c.rate)
          FROM comments c 
          WHERE c.movie_id = m.id AND c.status = '1') AS rating,
@@ -290,12 +494,14 @@ app.get('/api/search', async (req, res) => {
          FROM movie_actor ma
          JOIN actors a ON a.id = ma.actor_id 
          WHERE ma.movie_id = m.id) AS actors
-         FROM movies m
-      LEFT JOIN movie_actor ma ON ma.movie_id = m.id
-      LEFT JOIN actors a ON a.id = ma.actor_id WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
-        OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE $2
-      GROUP BY m.id
-      ORDER BY m.id ASC;
+FROM movies m
+LEFT JOIN movie_actor ma ON ma.movie_id = m.id
+LEFT JOIN actors a ON a.id = ma.actor_id 
+WHERE LOWER(m.title) ~* $1  -- Using PostgreSQL regex matching for precise title search
+   OR LOWER(REGEXP_REPLACE(a.name, '[ -]', '', 'g')) LIKE $2
+   AND m.status = 'Approved'  -- Correctly place this condition before GROUP BY
+GROUP BY m.id
+ORDER BY m.id ASC;
     `;
 
     const movies = await pool.query(query, [formattedSearchTermWithWordBoundary, formattedSearchTermWithoutLeadingWildcard]);
@@ -380,18 +586,200 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
   try {
     // Insert comment into the database with the current timestamp
     await pool.query(
-      "INSERT INTO comments (movie_id, username, comment, rate, status, created_at) VALUES ($1, $2, $3, $4, false, CURRENT_TIMESTAMP)",
-      [movieId, userName, commentText, rating, false]
-    );
-  
+      "INSERT INTO comments (movie_id, username, comment, rate, status, created_at) VALUES ($1, $2, $3, $4, COALESCE($5, false), CURRENT_TIMESTAMP)",
+      [movieId, userName, commentText, rating, false]  // Jika ingin menyet nilai status ke false
+    );    
+
     res.status(201).json({ message: "Comment added successfully." });
   } catch (error) {
     console.error("Error adding comment:", error);
     res.status(500).json({ message: "Server error while adding comment." });
-  }  
+  }
 });
 
+//endpoint delete movies
+app.delete('/movies/:id', async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    await pool.query("DELETE FROM movie_genre WHERE movie_id = $1", [id]);
+    await pool.query("DELETE FROM movie_actor WHERE movie_id = $1", [id]);
+    await pool.query("DELETE FROM movie_award WHERE movie_id = $1", [id]);
+    await pool.query("DELETE FROM comments WHERE movie_id = $1", [id]);
+    await pool.query("DELETE FROM movies WHERE id = $1", [id]);
+
+    res.json({ message: "Movie deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting movie:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//endpoint update movies, yaitu update status menjadi approved
+app.put('/movies/:id/approve', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await pool.query("UPDATE movies SET status = 'Approved' WHERE id = $1", [id]);
+    res.json({ message: "Movie approved successfully" });
+  } catch (error) {
+    console.error("Error approving movie:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//endpont update keseluruhan movies
+app.put('/api/movies/:id', upload.single('photo'), async (req, res) => {
+  const { id } = req.params;  // Get movie ID from URL parameters
+  const { title, alt_title, year, availability, synopsis, trailer, country_id, genres, awards, actors } = req.body;
+
+  try {
+    let images = null;
+
+    if (req.file) {
+      // If a new file is uploaded, handle it
+      images = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        });
+        uploadStream.end(req.file.buffer);
+      });
+    } else {
+      console.log("No file uploaded");
+    }
+
+    // Print movie data for debugging
+    console.log("Received data:", req.body);
+
+    // Step 1: Delete existing relationships from movie_actor, movie_award, movie_genre
+    await pool.query('DELETE FROM movie_actor WHERE movie_id = $1', [id]);
+    await pool.query('DELETE FROM movie_award WHERE movie_id = $1', [id]);
+    await pool.query('DELETE FROM movie_genre WHERE movie_id = $1', [id]);
+
+    // Step 2: Update the main movie record
+    const query = `
+      UPDATE movies
+      SET title = $1, alt_title = $2, availability = $3, synopsis = $4, trailer = $5, year = $6, images = $7, country_id = $8
+      WHERE id = $9
+      RETURNING *;
+    `;
+    const values = [title, alt_title, availability, synopsis, trailer, year, images, country_id, id];
+    const result = await pool.query(query, values);
+
+    // Step 3: Insert new relationships for genres, awards, and actors
+    if (genres && genres.length > 0) {
+      const genreQueries = genres.map((genreId) => {
+        return pool.query(
+          'INSERT INTO movie_genre (movie_id, genre_id) VALUES ($1, $2)',
+          [id, genreId]
+        );
+      });
+      await Promise.all(genreQueries);
+    }
+
+    if (awards && awards.length > 0) {
+      const awardQueries = awards.map((awardId) => {
+        return pool.query(
+          'INSERT INTO movie_award (movie_id, award_id) VALUES ($1, $2)',
+          [id, awardId]
+        );
+      });
+      await Promise.all(awardQueries);
+    }
+
+    if (actors && actors.length > 0) {
+      const actorQueries = actors.map((actorId) => {
+        return pool.query(
+          'INSERT INTO movie_actor (movie_id, actor_id) VALUES ($1, $2)',
+          [id, actorId]
+        );
+      });
+      await Promise.all(actorQueries);
+    }
+
+    // Return the updated movie record
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating movie:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+// Add a new movie
+app.post('/api/movies', upload.single('photo'), async (req, res) => {
+  const { title, alt_title, year, availability, synopsis, trailer, country_id, genres, awards, actors } = req.body;
+
+  try {
+    let images = null;
+
+    if (req.file) {
+      images = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            return reject(error);
+          }
+          resolve(result.secure_url);
+        });
+        uploadStream.end(req.file.buffer);
+      });
+    } else {
+      console.log("No file uploaded");
+    }
+
+    // Print movie data
+    console.log("Received data:", req.body);
+
+    const query = `
+    INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year, images, status, country_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;
+  `;
+    const values = [title, alt_title, availability, synopsis, trailer, year, images, 'Unapproved', country_id];
+
+    // Execute the query
+    const result = await pool.query(query, values);
+
+    const movieId = result.rows[0].id;
+
+    if (genres && genres.length > 0) {
+      const genreQueries = genres.map((genreId) => {
+        return pool.query(
+          'INSERT INTO movie_genre (movie_id, genre_id) VALUES ($1, $2)',
+          [movieId, genreId]
+        );
+      });
+      await Promise.all(genreQueries);
+    }
+
+    if (awards && awards.length > 0) {
+      const awardQueries = awards.map((awardId) => {
+        return pool.query(
+          'INSERT INTO movie_award (movie_id, award_id) VALUES ($1, $2)',
+          [movieId, awardId]
+        );
+      });
+      await Promise.all(awardQueries);
+    }
+
+    if (actors && actors.length > 0) {
+      const actorQueries = actors.map((actorId) => {
+        return pool.query(
+          'INSERT INTO movie_actor (movie_id, actor_id) VALUES ($1, $2)',
+          [movieId, actorId]
+        );
+      });
+      await Promise.all(actorQueries);
+    }
+
+    // Return the inserted movie
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error adding movie:", error);
+    res.status(500).send("Server error");
+  }
+});
 
 // Route to get all countries in descending order by id
 app.get('/api/countries', async (req, res) => {
@@ -533,12 +921,11 @@ app.put('/api/users/:username/ban', async (req, res) => {
   }
 });
 
-// change user role
 app.put('/api/users/:username/role', async (req, res) => {
   const { username } = req.params;
-  const { role } = req.body;
+  const { role_id } = req.body; // role_id, as sent from the frontend
   try {
-    const result = await pool.query('UPDATE users SET role_id = $1 WHERE username = $2 RETURNING *', [role, username]);
+    const result = await pool.query('UPDATE users SET role_id = $1 WHERE username = $2 RETURNING *', [role_id, username]);
     if (result.rowCount > 0) {
       res.status(200).json({ message: 'User role updated successfully' });
     } else {
@@ -804,78 +1191,7 @@ app.delete("/comments", async (req, res) => {
   }
 });
 
-// Add a new movie
-app.post('/api/movies', upload.single('photo'), async (req, res) => {
-  const { title, alt_title, year, availability, synopsis, trailer, country_id, genres, awards, actors } = req.body;
 
-  try {
-    let images = null;
-
-    if (req.file) {
-      images = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
-          if (error) {
-            return reject(error);
-          }
-          resolve(result.secure_url);
-        });
-        uploadStream.end(req.file.buffer);
-      });
-    } else {
-      console.log("No file uploaded");
-    }
-
-    // Print movie data
-    console.log("Received data:", req.body);
-
-    const query = `
-    INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year, images, status, country_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;
-  `;
-    const values = [title, alt_title, availability, synopsis, trailer, year, images, 'Unapproved', country_id];
-
-    // Execute the query
-    const result = await pool.query(query, values);
-
-    const movieId = result.rows[0].id;
-
-    if (genres && genres.length > 0) {
-      const genreQueries = genres.map((genreId) => {
-        return pool.query(
-          'INSERT INTO movie_genre (movie_id, genre_id) VALUES ($1, $2)',
-          [movieId, genreId]
-        );
-      });
-      await Promise.all(genreQueries);
-    }
-
-    if (awards && awards.length > 0) {
-      const awardQueries = awards.map((awardId) => {
-        return pool.query(
-          'INSERT INTO movie_award (movie_id, award_id) VALUES ($1, $2)',
-          [movieId, awardId]
-        );
-      });
-      await Promise.all(awardQueries);
-    }
-
-    if (actors && actors.length > 0) {
-      const actorQueries = actors.map((actorId) => {
-        return pool.query(
-          'INSERT INTO movie_actor (movie_id, actor_id) VALUES ($1, $2)',
-          [movieId, actorId]
-        );
-      });
-      await Promise.all(actorQueries);
-    }
-
-    // Return the inserted movie
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error("Error adding movie:", error);
-    res.status(500).send("Server error");
-  }
-});
 
 app.post('/api/watchlist', async (req, res) => {
   const { username, movieId } = req.body;  // Ambil `username` sesuai data yang dikirimkan dari frontend

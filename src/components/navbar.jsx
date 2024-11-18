@@ -46,8 +46,8 @@ const Navbar = () => {
       const filterCountryId = parseInt(filter.country, 10);
       const matchesCountry = filter.country ? movie.country_id === filterCountryId : true;
       const matchesGenre = filter.genre
-        ? movie.genre.split(', ').includes(filter.genre)
-        : true;// Menggunakan name untuk genre
+        ? (movie.genres && movie.genres.split(', ').some(genre => genre.toLowerCase() === filter.genre.toLowerCase()))
+        : true;
       const matchesYear = filter.year ? movie.year === parseInt(filter.year) : true;
       const matchesAvail = filter.avail
         ? normalizeAvailability(movie.availability) === normalizeAvailability(filter.avail)
@@ -236,7 +236,7 @@ const Navbar = () => {
 
   const fetchMovies = async () => {
     try {
-      const response = await fetch('http://localhost:3005/movies');
+      const response = await fetch('http://localhost:3005/home/movies');
       const data = await response.json();
 
       if (data.length > 0) {

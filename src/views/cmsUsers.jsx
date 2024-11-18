@@ -57,32 +57,33 @@ const Users = () => {
     }, []);
 
     const handleChangeRoleToAdmin = async (username) => {
-        console.log(`Attempting to change role of user: ${username}`); // Log when the function is called
+        console.log(`Attempting to change role of user: ${username}`);
         if (window.confirm(`Are you sure you want to change the role of ${username} to Admin?`)) {
             try {
-              const response = await fetch(`http://localhost:3005/api/users/${username}/role`, {
+                const response = await fetch(`http://localhost:3005/api/users/${username}/role`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ role_id: 'Admin' }), // Change role to Admin
+                    body: JSON.stringify({ role_id: 'Admin' }), // Use 'role_id' instead of 'role'
                 });
-
-                if (response.ok) {                  
-                  window.alert(`${username} has been successfully change role to Admin.`);
-  
-                  const updatedUsers = users.map(user =>
-                    user.username === username ? { ...user, role_id: 'Admin' } : user
-                );
-                setUsers(updatedUsers);
-              }
-                
+    
+                if (response.ok) {
+                    window.alert(`${username} has been successfully changed to Admin.`);
+    
+                    // Update the user role in the state
+                    const updatedUsers = users.map(user =>
+                        user.username === username ? { ...user, role_id: 'Admin' } : user
+                    );
+                    setUsers(updatedUsers);
+                }
+    
             } catch (error) {
                 console.error('Failed to change user role:', error);
             }
         }
     };
-
+    
     const handleBanned = async (username) => {
       console.log(`Attempting to ban user: ${username}`); // Log when the function is called
       if (window.confirm(`Are you sure you want to ban ${username}?`)) {

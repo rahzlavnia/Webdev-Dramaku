@@ -1,14 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import logo from '../assets/logo.png';
+import { useNavigate } from 'react-router-dom';
 
 export default function ResetPassword() {
-  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [token, setToken] = useState("");
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get("token");
+    const emailParam = urlParams.get("email");
+  
+    if (resetToken && emailParam) {
+      setToken(resetToken);
+    } else {
+      setError("Invalid or missing token or email.");
+    }
+  }, []);
+  
+  
   const handleReset = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -20,13 +35,26 @@ export default function ResetPassword() {
     }
 
     try {
-      // Send a request to the backend to update the password
-      const response = await axios.post("/api/reset-password", { email, newPassword });
-      setMessage("Your password has been reset successfully.");
+      const response = await fetch("http://localhost:3005/api/reset-password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newPassword, token }), // Gunakan newPassword sesuai dengan backend
+      });
+
+      if (response.ok) {
+        setMessage("Your password has been reset successfully.");
+        navigate("/login");
+      } else {
+        const data = await response.json();
+        setError(data.message || "An error occurred. Please try again.");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred. Please try again.");
+      setError("An error occurred. Please try again.");
     }
   };
+
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
@@ -40,17 +68,6 @@ export default function ResetPassword() {
             {message && <p className="text-green-500 text-center">{message}</p>}
 
             <form onSubmit={handleReset}>
-              <div className="mb-4">
-                <input
-                  className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
               <div className="mb-4">
                 <input
                   className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"

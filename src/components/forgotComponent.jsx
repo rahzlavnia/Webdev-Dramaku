@@ -13,8 +13,15 @@ export default function ForgotPassword() {
     setError("");
 
     try {
-      // Send a request to the backend to initiate the password reset process
-      const response = await axios.post("/api/forgot-password", { email });
+      //coba pakai await fetch saja
+      const response = await fetch("http://localhost:3005/api/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
       setMessage("Password reset link has been sent to your email.");
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred. Please try again.");
@@ -33,7 +40,7 @@ export default function ForgotPassword() {
             {message && <p className="text-green-500 text-center">{message}</p>}
 
             <form onSubmit={handleForgotPassword}>
-              <div className="mb-4">
+              <div className="mb-4 mt-6">
                 <input
                   className="w-full p-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
                   type="email"

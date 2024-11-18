@@ -52,7 +52,21 @@ const CmsAwards = () => {
     }));
   };
 
+  // const handleEditClick = (award) => {
+  //   setEditId(award.id); // Set ID of award being edited
+  //   setEditedAward({
+  //     country_id: award.country_id,
+  //     name: award.name,
+  //     year: award.year,
+  //   });
+  // };
   const handleEditClick = (award) => {
+    // Mengecek apakah 'year' adalah angka
+    if (isNaN(award.year) || !Number.isInteger(Number(award.year))) {
+      alert('Year must be an integer value'); // Peringatan jika 'year' bukan integer
+      return; // Menghentikan fungsi lebih lanjut jika tidak valid
+    }
+  
     setEditId(award.id); // Set ID of award being edited
     setEditedAward({
       country_id: award.country_id,
@@ -60,6 +74,9 @@ const CmsAwards = () => {
       year: award.year,
     });
   };
+  
+
+
 
   const handleCancelClick = () => {
     setEditId(null); // Reset edit mode
@@ -67,7 +84,14 @@ const CmsAwards = () => {
   };
 
   const handleSaveClick = async () => {
+    // Validasi sebelum menyimpan
+    if (isNaN(editedAward.year) || !Number.isInteger(Number(editedAward.year))) {
+      alert('Year must be an integer value');
+      return; // Menghentikan proses save jika year tidak valid
+    }
+  
     try {
+      // Mengirimkan data ke backend untuk diperbarui
       await fetch(`http://localhost:3005/awards/${editId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -90,27 +114,33 @@ const CmsAwards = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission behavior
-
-     // Ensure formData has the expected structure
-  const formattedData = {
-    country_id: parseInt(formData.country_id, 10), // Convert to number if needed
-    name: formData.name.trim(), // Trim any whitespace
-    year: parseInt(formData.year, 10), // Convert to number if needed
-  };
-
-  console.log("Submitting award:", JSON.stringify(formattedData));
-
+  
+    // Validasi jika 'year' bukan angka
+    if (isNaN(formData.year) || !Number.isInteger(Number(formData.year))) {
+      alert('Year must be a valid number'); // Peringatan jika 'year' bukan angka
+      return; // Hentikan eksekusi jika tahun tidak valid
+    }
+  
+    // Pastikan formData memiliki struktur yang benar
+    const formattedData = {
+      country_id: parseInt(formData.country_id, 10), // Convert to number if needed
+      name: formData.name.trim(), // Trim any whitespace
+      year: parseInt(formData.year, 10), // Convert to number if needed
+    };
+  
+    console.log("Submitting award:", JSON.stringify(formattedData));
+  
     try {
       // Send a POST request to the awards API
       const response = await fetch("http://localhost:3005/awards", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData), // Make sure formData has the correct structure
+        body: JSON.stringify(formattedData), // Pastikan formData sudah diformat dengan benar
       });
-
-      // Check if the response is okay
+  
+      // Cek jika responsenya oke
       if (response.ok) {
         console.log("Award created successfully");
         fetchAwards(); // Refresh the awards data
@@ -122,7 +152,7 @@ const CmsAwards = () => {
     } catch (error) {
       console.error("Server error:", error);
     }
-  };
+  };  
 
   const filteredAwards = awardsData.filter(award =>
     award.name.toLowerCase().startsWith(searchQuery.toLowerCase())

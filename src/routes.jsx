@@ -17,7 +17,10 @@ import Genres from './views/cmsGenres';
 import FilteredMovies from './views/filteredMovies';
 import NotFound from './views/NotFound';
 import Watchlist from './views/watchlist';
-
+import DramaEdit from './views/cmsEditDrama';
+import ForgotPassword from './components/forgotComponent';
+import ResetPassword from './components/resetComponent';
+// import ForgotPassword from "./components/forgotComponent";
 
 import ProtectedRoute from './protectedRoutes/ProtectedRoute';
 
@@ -35,6 +38,8 @@ const AppRoutes = ({ isAuthenticated, handleLogout }) => {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="/notfound" element={< NotFound/>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected routes group */}
             <Route path="/actors" element={
@@ -75,6 +80,11 @@ const AppRoutes = ({ isAuthenticated, handleLogout }) => {
             <Route path="/users" element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                     <Users />
+                </ProtectedRoute>
+            } />
+            <Route path="/dramaEdit/:id" element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <DramaEdit />
                 </ProtectedRoute>
             } />
         </Routes>
