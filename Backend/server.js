@@ -37,7 +37,7 @@ const pool = new Pool({
   password: 'newpassword',
   port: 5432,
 });
-
+module.exports = pool;
 
 async function sendEmail(to, subject, htmlContent) {
   try {
@@ -441,13 +441,11 @@ app.get('/movies/:id', async (req, res) => {
 
     const result = await pool.query(query, [movieId]);
 
-    console.log('Result:', result.rows); // Debugging output
-
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Movie not found' });
     }
 
-    res.json(result.rows[0]); // Return the movie details as a JSON response
+    res.status(200).json(result.rows[0]); // Return the movie details as a JSON response
   } catch (error) {
     console.error('Error fetching movie details:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -457,7 +455,7 @@ app.get('/movies/:id', async (req, res) => {
 
 
 app.get('/api/search', async (req, res) => {
-  const searchTerm = req.query.term || ''; 
+  const searchTerm = req.query.term || '';
 
   const stopWords = [
     'the', 'of', 'a', 'an', 'in', 'and', 'to', 'for', 'is',
@@ -588,7 +586,7 @@ app.post('/movies/:id/comments', authenticateToken, async (req, res) => {
     await pool.query(
       "INSERT INTO comments (movie_id, username, comment, rate, status, created_at) VALUES ($1, $2, $3, $4, COALESCE($5, false), CURRENT_TIMESTAMP)",
       [movieId, userName, commentText, rating, false]  // Jika ingin menyet nilai status ke false
-    );    
+    );
 
     res.status(201).json({ message: "Comment added successfully." });
   } catch (error) {
@@ -608,7 +606,7 @@ app.delete('/movies/:id', async (req, res) => {
     await pool.query("DELETE FROM comments WHERE movie_id = $1", [id]);
     await pool.query("DELETE FROM movies WHERE id = $1", [id]);
 
-    res.json({ message: "Movie deleted successfully" });
+    res.status(200).json({ message: "Movie deleted successfully" });
   } catch (error) {
     console.error("Error deleting movie:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -621,7 +619,7 @@ app.put('/movies/:id/approve', async (req, res) => {
 
   try {
     await pool.query("UPDATE movies SET status = 'Approved' WHERE id = $1", [id]);
-    res.json({ message: "Movie approved successfully" });
+    res.status(200).json({ message: "Movie approved successfully" });
   } catch (error) {
     console.error("Error approving movie:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -729,9 +727,6 @@ app.post('/api/movies', upload.single('photo'), async (req, res) => {
       console.log("No file uploaded");
     }
 
-    // Print movie data
-    console.log("Received data:", req.body);
-
     const query = `
     INSERT INTO movies (title, alt_title, availability, synopsis, trailer, year, images, status, country_id)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;
@@ -774,10 +769,11 @@ app.post('/api/movies', upload.single('photo'), async (req, res) => {
     }
 
     // Return the inserted movie
-    res.json(result.rows[0]);
+    // Return the inserted movie
+    res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Error adding movie:", error);
-    res.status(500).send("Server error");
+    console.error("Error in POST /api/movies:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -1268,7 +1264,14 @@ app.delete('/api/watchlist/:username/:movieId', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
+app.get('/api/test', (req, res) => res.send('API is working!'));
 
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+// app.listen(3000, () => {
+//   console.log('Server is running on port 3000');
+// });

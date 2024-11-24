@@ -3,6 +3,24 @@ import CardMovie from '../components/cardMovie';
 import { useNavigate } from 'react-router-dom';
 import Slider from '../components/slider';
 
+export const fetchMovies = async (setLoading, setMovies, setVisibleMovies, setHasMore) => {
+  setLoading(true);
+  try {
+    const response = await fetch(`http://localhost:3005/home/movies`);
+    const data = await response.json();
+
+    if (data.length > 0) {
+      setMovies(data); // Store all movies
+      setVisibleMovies(data.slice(0, 12)); // Show the first 12 movies
+    } else {
+      setHasMore(false); // No data available
+    }
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
 const Home = () => {
   const [movies, setMovies] = useState([]); // All movies from server
@@ -11,26 +29,6 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
-
-
-  const fetchMovies = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`http://localhost:3005/home/movies`);
-      const data = await response.json();
-
-      if (data.length > 0) {
-        setMovies(data); // Store all movies
-        setVisibleMovies(data.slice(0, 12)); // Show the first 12 movies
-      } else {
-        setHasMore(false); // No data available
-      }
-    } catch (error) {
-      console.error('Error fetching movies:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const showMoreMovies = () => {
     const nextOffset = offset + 12;
@@ -45,7 +43,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    fetchMovies(); // Run on component mount
+    fetchMovies(setLoading, setMovies, setVisibleMovies, setHasMore);
   }, []);
 
   return (
