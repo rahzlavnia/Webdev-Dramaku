@@ -12,6 +12,7 @@ const http = require('http');
 
 
 
+
 let server;
 
 beforeAll(() => {
@@ -25,7 +26,7 @@ afterAll(() => {
 
 
 jest.setTimeout(40000); // Set waktu tunggu Jest jika diperlukan
-
+console.log("test");
 // test('should return a list of genres', async () => {
 //   const response = await request(app).get('/api/genres'); // Mengirim permintaan ke endpoint
 
