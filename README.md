@@ -40,7 +40,7 @@
     <a href="https://github.com/rahzlavnia/Webdev-Dramaku"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/rahzlavnia/Webdev-Dramaku">View Demo</a>
+    <a href="https://kelompok10-dramaku.vercel.app/">View Demo</a>
     ·
     <a href="https://github.com/rahzlavnia/Webdev-Dramaku/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
